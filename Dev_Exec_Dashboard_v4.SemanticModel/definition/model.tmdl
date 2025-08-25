@@ -10,7 +10,7 @@ annotation PBI_QueryOrder = ["G_DIMCALENDAR","EmployeeSqFt","G_MARS_SALES_DASHBO
 
 annotation __PBI_TimeIntelligenceEnabled = 1
 
-annotation PBIDesktopVersion = 2.146.705.0 (25.08)+b71502aff0a01340c88f384884ef42771068f115
+annotation PBIDesktopVersion = 2.146.1026.0 (25.08)+fb98ab832373de81dccd5c01cd96306a48477556
 
 annotation PBI_ProTooling = ["DevMode","TMDLView_Desktop"]
 
