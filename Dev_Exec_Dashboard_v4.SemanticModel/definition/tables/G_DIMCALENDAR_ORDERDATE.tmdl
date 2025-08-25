@@ -1,6 +1,10 @@
 table G_DIMCALENDAR_ORDERDATE
 	lineageTag: b12ac872-ba46-415d-9936-d4d9baa56653
 
+	measure 'Max Date' = MAX(G_DIMCALENDAR_ORDERDATE[Date])
+		formatString: General Date
+		lineageTag: 12270d68-a150-4171-94b4-bb48966722c6
+	
 	column CompanyNumber
 		dataType: string
 		lineageTag: 02270d68-a150-4171-94b4-bb48966722c6
