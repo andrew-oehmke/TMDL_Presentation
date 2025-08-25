@@ -5,7 +5,7 @@
       "ordinal": 0,
       "scrollPosition": {
         "x": 0,
-        "y": 201
+        "y": 0
       },
       "nodes": [
         {
@@ -88,19 +88,6 @@
         },
         {
           "location": {
-            "x": 714,
-            "y": 921.25
-          },
-          "nodeIndex": "RLS_CONFIG_FULL",
-          "nodeLineageTag": "2224a626-ff0c-4aa5-9294-644ce682d186",
-          "size": {
-            "height": 176,
-            "width": 234
-          },
-          "zIndex": 4
-        },
-        {
-          "location": {
             "x": 684,
             "y": 351
           },
@@ -149,18 +136,6 @@
             "width": 234
           },
           "zIndex": 9
-        },
-        {
-          "location": {
-            "x": 714,
-            "y": 1136.25
-          },
-          "nodeIndex": "RLS_CONFIG_NOT_MARGIN_BUDGET",
-          "size": {
-            "height": 176,
-            "width": 234
-          },
-          "zIndex": 0
         },
         {
           "location": {
