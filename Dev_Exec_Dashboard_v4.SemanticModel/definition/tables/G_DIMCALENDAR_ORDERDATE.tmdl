@@ -5,6 +5,10 @@ table G_DIMCALENDAR_ORDERDATE
 		formatString: General Date
 		lineageTag: 12270d68-a150-4171-94b4-bb48966722c6
 	
+	measure MinDate = MIN(G_DIMCALENDAR_ORDERDATE[Date])
+		formatString: General Date
+		lineageTag: 02270d68-a150-4171-94b4-bb48966722c1
+
 	column CompanyNumber
 		dataType: string
 		lineageTag: 02270d68-a150-4171-94b4-bb48966722c6
