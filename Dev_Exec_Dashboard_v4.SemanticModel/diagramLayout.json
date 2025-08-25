@@ -1,0 +1,188 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 201
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 1403,
+            "y": 431
+          },
+          "nodeIndex": "YearSelector",
+          "nodeLineageTag": "f9d50a2b-d9ad-4ef7-8629-b6510805e13a",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 10
+        },
+        {
+          "location": {
+            "x": 1,
+            "y": 349
+          },
+          "nodeIndex": "G_DIMCALENDAR",
+          "nodeLineageTag": "c3005389-17ea-4d9f-b079-fead6a4442ad",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 11
+        },
+        {
+          "location": {
+            "x": 1407,
+            "y": 201
+          },
+          "nodeIndex": "DynamicMonthAxis",
+          "nodeLineageTag": "26f37f29-23a6-4d66-9525-dd63ee14edf6",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 1400,
+            "y": 4
+          },
+          "nodeIndex": "EmployeeSqFt",
+          "nodeLineageTag": "5ba673ee-24db-48ae-96db-3d4f0ebfe85f",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 350,
+            "y": 352
+          },
+          "nodeIndex": "G_MARS_SALES_DASHBOARD_DATA",
+          "nodeLineageTag": "84bb1789-47e7-4079-805c-e032eed66627",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 12
+        },
+        {
+          "location": {
+            "x": 342,
+            "y": 740.5
+          },
+          "nodeIndex": "G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA",
+          "nodeLineageTag": "a459a65e-fd00-41fe-a879-e09e189ea325",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 714,
+            "y": 921.25
+          },
+          "nodeIndex": "RLS_CONFIG_FULL",
+          "nodeLineageTag": "2224a626-ff0c-4aa5-9294-644ce682d186",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 684,
+            "y": 351
+          },
+          "nodeIndex": "G_DIMCALENDAR_REQUESTEDDATE",
+          "nodeLineageTag": "ccadbf5e-837b-4d00-b3b5-09ab7b90f4b3",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 13
+        },
+        {
+          "location": {
+            "x": 1691,
+            "y": 389.125
+          },
+          "nodeIndex": "DynamicMonthAxis RequestDate",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 83,
+            "y": 0
+          },
+          "nodeIndex": "G_DIMCALENDAR_ORDERDATE",
+          "nodeLineageTag": "b12ac872-ba46-415d-9936-d4d9baa56653",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
+            "x": 485,
+            "y": 0
+          },
+          "nodeIndex": "G_DIMCALENDAR_SHIPPEDDATE",
+          "nodeLineageTag": "b17308ac-58dc-4ab7-afe4-86e0b50bbbb0",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 9
+        },
+        {
+          "location": {
+            "x": 714,
+            "y": 1136.25
+          },
+          "nodeIndex": "RLS_CONFIG_NOT_MARGIN_BUDGET",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1974,
+            "y": 556.125
+          },
+          "nodeIndex": "Product Slicer",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

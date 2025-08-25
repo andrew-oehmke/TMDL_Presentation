@@ -1,0 +1,28 @@
+table YearSelector
+	lineageTag: f9d50a2b-d9ad-4ef7-8629-b6510805e13a
+
+	column FiscalYear
+		lineageTag: cfaf1ce7-3b64-4df1-a062-805e9c7d57be
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [FiscalYear]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition YearSelector = calculated
+		mode: import
+		source =
+				
+				UNION (
+				    SELECTCOLUMNS(
+				        FILTER(
+				            VALUES(G_dimCalendar[FiscalYear]),
+				            NOT ISBLANK(G_dimCalendar[FiscalYear])
+				        ),
+				        "FiscalYear", G_dimCalendar[FiscalYear]
+				    ),
+				    ROW("FiscalYear", "TTM")
+				)
+
+	annotation PBI_Id = abdc9dfb65814fe3a99f6a28052652f7
+

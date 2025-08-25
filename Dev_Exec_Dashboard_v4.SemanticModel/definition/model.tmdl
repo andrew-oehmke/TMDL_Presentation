@@ -1,0 +1,49 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["G_DIMCALENDAR","EmployeeSqFt","G_MARS_SALES_DASHBOARD_DATA","G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA","G_DIMCALENDAR_REQUESTEDDATE","G_DIMCALENDAR_ORDERDATE","G_DIMCALENDAR_SHIPPEDDATE"]
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBIDesktopVersion = 2.146.705.0 (25.08)+b71502aff0a01340c88f384884ef42771068f115
+
+annotation PBI_ProTooling = ["DevMode","TMDLView_Desktop"]
+
+ref table DateTableTemplate_bcb3fe7b-c28a-473a-bade-824cf95fc371
+ref table YearSelector
+ref table G_DIMCALENDAR
+ref table DynamicMonthAxis
+ref table LocalDateTable_a69408b7-8c8a-4d28-b1e3-92c8dfb3a5aa
+ref table EmployeeSqFt
+ref table LocalDateTable_6e8f3c16-daaa-41aa-8781-f92c7b69be01
+ref table LocalDateTable_b9a37572-5954-40da-8df3-4e03ddf5c584
+ref table G_MARS_SALES_DASHBOARD_DATA
+ref table LocalDateTable_65c1ce5c-3e7e-4efe-a486-6d60672ce671
+ref table G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA
+ref table LocalDateTable_ed20fd1e-8971-4725-86e2-30e76c751425
+ref table G_DIMCALENDAR_REQUESTEDDATE
+ref table LocalDateTable_30e54908-606a-4f7e-8560-bf6f470c0e57
+ref table 'DynamicMonthAxis RequestDate'
+ref table LocalDateTable_1edc126d-cc2e-49b7-bf82-0c6074974331
+ref table G_DIMCALENDAR_ORDERDATE
+ref table LocalDateTable_42e7efc5-f960-4ebe-9a82-0af6cb0c54f2
+ref table G_DIMCALENDAR_SHIPPEDDATE
+ref table LocalDateTable_f360742d-31a9-4c38-8508-7364cea23328
+ref table LocalDateTable_0cabc900-de14-4310-a1f2-02b4a74c559c
+ref table LocalDateTable_0d92ec3b-3165-4fed-9f2e-965c8a053946
+ref table LocalDateTable_080ab05f-d42d-4b87-8182-901a2b8a3105
+ref table LocalDateTable_771553ba-ea78-48a3-8008-946fbdd2c9f5
+ref table LocalDateTable_4c14e6eb-8ae3-4539-adaf-a899a4967747
+ref table LocalDateTable_17a6f678-23cc-4d90-8ea0-bacd2c303d4d
+ref table 'Product Slicer'
+
+ref role RLS_FULL
+ref role RLS_LIMITED
+
+ref cultureInfo en-US
+

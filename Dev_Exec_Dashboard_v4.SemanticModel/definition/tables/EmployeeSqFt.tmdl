@@ -1,0 +1,61 @@
+table EmployeeSqFt
+	lineageTag: 5ba673ee-24db-48ae-96db-3d4f0ebfe85f
+
+	column BranchNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: fb8fcc27-49b0-4f83-a42a-a8af4db39a34
+		summarizeBy: sum
+		sourceColumn: BranchNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: f9debee8-5886-4abc-9c42-e5e7550222ee
+		summarizeBy: none
+		sourceColumn: Date
+
+		variation Variation
+			isDefault
+			relationship: b0bbde1d-302f-4ae9-94f9-4a6cbe91f8e0
+			defaultHierarchy: LocalDateTable_6e8f3c16-daaa-41aa-8781-f92c7b69be01.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+	column SqFt
+		dataType: int64
+		formatString: 0
+		lineageTag: e2fb9cc1-582c-4466-b5b3-0f8dd690b5f7
+		summarizeBy: sum
+		sourceColumn: SqFt
+
+		changedProperty = DataType
+
+		annotation SummarizationSetBy = Automatic
+
+	column EmployeeCount
+		dataType: int64
+		formatString: 0
+		lineageTag: 4dd7a55c-a78a-4292-a8e5-1bf9b4d6531e
+		summarizeBy: sum
+		sourceColumn: EmployeeCount
+
+		annotation SummarizationSetBy = Automatic
+
+	partition EmployeeSqFt = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("C:\Users\AndrewOehmke\OneDrive - Inspire11\Clients\MARS\Phase 3 - Global Executive Dashboard\Dashboard Development\Dev\BranchSqFtData.xlsx"), null, true),
+				    Sheet1_Sheet = Source{[Item="Sheet1",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet1_Sheet, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"BranchNumber", Int64.Type}, {"Date", type datetime}, {"SqFt", type text}, {"EmployeeCount", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

@@ -1,0 +1,317 @@
+createOrReplace
+
+	table G_DIMCALENDAR
+		lineageTag: c3005389-17ea-4d9f-b079-fead6a4442ad
+
+		measure 'This Month Filter' =
+				
+				
+				var thismonth = [This Month]
+				var thisyear = [This Year]
+				RETURN
+				
+				IF(MAX(G_DIMCALENDAR[FiscalMonth]) = thismonth && max(G_DIMCALENDAR[FiscalYear]) = thisyear,1,0)
+			formatString: 0
+			lineageTag: 4db325bb-420c-4447-b3d1-60cea1874787
+
+		column Date
+			dataType: dateTime
+			formatString: Long Date
+			lineageTag: 9b2da1a3-462e-4b95-93aa-e4301f8b910b
+			summarizeBy: none
+			sourceColumn: Date
+
+			variation Variation
+				isDefault
+				relationship: c7ab828d-8501-4f3b-8ed8-e25f77807876
+				defaultHierarchy: LocalDateTable_65c1ce5c-3e7e-4efe-a486-6d60672ce671.'Date Hierarchy'
+
+			annotation SummarizationSetBy = Automatic
+
+		column DayOfWeek
+			dataType: int64
+			formatString: 0
+			lineageTag: 876b706b-4552-4269-9566-e53b03b71e1e
+			summarizeBy: sum
+			sourceColumn: DayOfWeek
+
+			annotation SummarizationSetBy = Automatic
+
+		column DayOfWeekName
+			dataType: string
+			lineageTag: b7c434fb-3e6d-4d20-bb75-ec19264023be
+			summarizeBy: none
+			sourceColumn: DayOfWeekName
+
+			annotation SummarizationSetBy = Automatic
+
+		column IsWeekday
+			dataType: boolean
+			formatString: """TRUE"";""TRUE"";""FALSE"""
+			lineageTag: c7c1f549-3715-45fa-8af9-df8b5ff6b6f2
+			summarizeBy: none
+			sourceColumn: IsWeekday
+
+			annotation SummarizationSetBy = Automatic
+
+		column IsHoliday
+			dataType: boolean
+			formatString: """TRUE"";""TRUE"";""FALSE"""
+			lineageTag: c4dae759-4599-444d-b4a5-a3c94967dc42
+			summarizeBy: none
+			sourceColumn: IsHoliday
+
+			annotation SummarizationSetBy = Automatic
+
+		column HolidayName
+			dataType: string
+			lineageTag: c9faf298-bd40-47be-8d59-3b9cd403da4d
+			summarizeBy: none
+			sourceColumn: HolidayName
+
+			annotation SummarizationSetBy = Automatic
+
+		column FiscalYear
+			dataType: int64
+			formatString: 0
+			lineageTag: bc2ab8d1-9a3a-453a-8e1c-f2ef997c4a0c
+			summarizeBy: none
+			sourceColumn: FiscalYear
+
+			annotation SummarizationSetBy = Automatic
+
+		column FiscalQuarter
+			dataType: int64
+			formatString: 0
+			lineageTag: 74367a3e-bf73-4d88-9371-6d30f04ffbed
+			summarizeBy: sum
+			sourceColumn: FiscalQuarter
+
+			annotation SummarizationSetBy = Automatic
+
+		column FiscalMonth
+			dataType: int64
+			formatString: 0
+			lineageTag: f284099d-bc5e-4dbb-881f-38bd35caee9d
+			summarizeBy: sum
+			sourceColumn: FiscalMonth
+
+			annotation SummarizationSetBy = Automatic
+
+		column FiscalMonthName
+			dataType: string
+			lineageTag: ca0d489e-16d4-4aef-a949-89b851bc7c13
+			summarizeBy: none
+			sourceColumn: FiscalMonthName
+
+			annotation SummarizationSetBy = Automatic
+
+		column FiscalMonthAbbr
+			dataType: string
+			lineageTag: 47a929bd-eddf-49e3-bf94-53b4d13cc817
+			summarizeBy: none
+			sourceColumn: FiscalMonthAbbr
+
+			annotation SummarizationSetBy = Automatic
+
+		column CalendarYear
+			dataType: int64
+			formatString: 0
+			lineageTag: 4ff8b15f-0fcf-42b0-b6e9-2b41a83f3c78
+			summarizeBy: sum
+			sourceColumn: CalendarYear
+
+			annotation SummarizationSetBy = Automatic
+
+		column CalendarQuarter
+			dataType: int64
+			formatString: 0
+			lineageTag: 5e22bd41-0d8b-4c33-87a7-749133de9395
+			summarizeBy: sum
+			sourceColumn: CalendarQuarter
+
+			annotation SummarizationSetBy = Automatic
+
+		column CalendarMonth
+			dataType: int64
+			formatString: 0
+			lineageTag: b45e91ee-7915-446c-9de1-4a4f00683104
+			summarizeBy: sum
+			sourceColumn: CalendarMonth
+
+			annotation SummarizationSetBy = Automatic
+
+		column CalendarMonthName
+			dataType: string
+			lineageTag: 9e8d893c-5824-4747-9728-aae125d5ade0
+			summarizeBy: none
+			sourceColumn: CalendarMonthName
+			sortByColumn: CalendarMonth
+
+			changedProperty = SortByColumn
+
+			annotation SummarizationSetBy = Automatic
+
+		column CalendarMonthAbbr
+			dataType: string
+			lineageTag: a4a03604-0ac0-4971-98b4-612792cd53d5
+			summarizeBy: none
+			sourceColumn: CalendarMonthAbbr
+
+			annotation SummarizationSetBy = Automatic
+
+		column DayOfYear
+			dataType: int64
+			formatString: 0
+			lineageTag: e8522055-4c02-4d05-8120-de650e8ed108
+			summarizeBy: sum
+			sourceColumn: DayOfYear
+
+			annotation SummarizationSetBy = Automatic
+
+		column 'Day Sort' = ```
+				
+				var daysago = DATEDIFF(G_DIMCALENDAR[Date],TODAY(),DAY)
+				RETURN
+				IF(DaysAgo >= 0 && DaysAgo < 14, DaysAgo + 1, BLANK())
+				
+				```
+			formatString: 0
+			lineageTag: a1b20752-7428-419f-8a95-334fcd0317a8
+			summarizeBy: sum
+
+			annotation SummarizationSetBy = Automatic
+
+		column WeekNumber = WEEKNUM(G_DIMCALENDAR[Date],2)
+			formatString: 0
+			lineageTag: dc957eeb-e68e-4ce3-87d0-992dff965a9a
+			summarizeBy: sum
+
+			annotation SummarizationSetBy = Automatic
+
+		column AlignedWeekStartDate =
+				
+				VAR ThisWeekNum = G_DIMCALENDAR[WeekNumber]
+				VAR AlignedDate =
+				    CALCULATE (
+				        MIN ( G_DIMCALENDAR[WeekStartDate] ),
+				        FILTER (
+				            ALL ( G_DIMCALENDAR ),
+				            G_DIMCALENDAR[FiscalYear] = 2025
+				                && G_DIMCALENDAR[WeekNumber] = ThisWeekNum
+				        )
+				    )
+				RETURN
+				AlignedDate
+			dataType: dateTime
+			formatString: Short Date
+			lineageTag: c9f236a3-5dcb-464a-ad85-a05ddcf5bbb2
+			summarizeBy: none
+
+			variation Variation
+				isDefault
+				relationship: 42347ce2-cf18-4d8e-9193-022a58993e72
+				defaultHierarchy: LocalDateTable_b9a37572-5954-40da-8df3-4e03ddf5c584.'Date Hierarchy'
+
+			changedProperty = DataType
+
+			annotation SummarizationSetBy = Automatic
+
+			annotation UnderlyingDateTimeDataType = Date
+
+		column WeekOffset =
+				
+				// var thisweek = LOOKUPVALUE(G_DIMCALENDAR[WeekStartDate],G_DIMCALENDAR[Date],TODAY())
+				var thisweek = LOOKUPVALUE(G_DIMCALENDAR[WeekStartDate],G_DIMCALENDAR[Date],DATE(2025,04,11))
+				VAR LatestWeekStart = CALCULATE(
+				    thisweek,
+				    ALL(G_DIMCALENDAR)
+				)
+				RETURN
+				DATEDIFF(G_DIMCALENDAR[WeekStartDate], LatestWeekStart, WEEK)
+			formatString: 0
+			lineageTag: 99e022cd-3b7f-418f-a4b7-bb8570921885
+			summarizeBy: sum
+
+			annotation SummarizationSetBy = Automatic
+
+		column WeekStartDate = G_DIMCALENDAR[Date] - WEEKDAY(G_DIMCALENDAR[Date], 2) + 1
+			formatString: Short Date
+			lineageTag: 54c3faf0-ab5e-4664-ac5a-462706a97430
+			summarizeBy: none
+
+			variation Variation
+				isDefault
+				relationship: d470a5ff-f9a3-40ba-b92e-9a6249124815
+				defaultHierarchy: LocalDateTable_a69408b7-8c8a-4d28-b1e3-92c8dfb3a5aa.'Date Hierarchy'
+
+			changedProperty = DataType
+
+			annotation SummarizationSetBy = Automatic
+
+			annotation UnderlyingDateTimeDataType = Date
+
+		column CompanyNumber
+			dataType: string
+			lineageTag: 26a3d302-ec34-4a1e-a72a-8d23493db0ea
+			summarizeBy: none
+			sourceColumn: CompanyNumber
+
+			annotation SummarizationSetBy = Automatic
+
+		column IsBusinessDay
+			dataType: boolean
+			formatString: """TRUE"";""TRUE"";""FALSE"""
+			lineageTag: 61587af7-3c8b-4062-9ce7-2448a55f0ded
+			summarizeBy: none
+			sourceColumn: IsBusinessDay
+
+			annotation SummarizationSetBy = Automatic
+
+		column FYTDBusinessDays
+			dataType: int64
+			formatString: 0
+			lineageTag: 475a2b6e-2618-40dc-8517-a4393c61f904
+			summarizeBy: sum
+			sourceColumn: FYTDBusinessDays
+
+			annotation SummarizationSetBy = Automatic
+
+		column FMTDBusinessDays
+			dataType: int64
+			formatString: 0
+			lineageTag: e41222ae-2d19-4ef2-9f7e-55ca8a53c67c
+			summarizeBy: sum
+			sourceColumn: FMTDBusinessDays
+
+			annotation SummarizationSetBy = Automatic
+
+		column DayofWeekNameAbbr = ```
+				
+				    SWITCH(
+				        G_DIMCALENDAR[DayOfWeekName],
+				        "Sunday","Sun",
+				        "Monday","Mon",
+				        "Tuesday","Tue",
+				        "Wednesday","Wed",
+				        "Thursday","Thu",
+				        "Friday","Fri",
+				        "Saturday","Sat")
+				```
+			lineageTag: 2a1e17da-c65f-4e4b-96f6-3290d8e35738
+			summarizeBy: none
+
+			annotation SummarizationSetBy = Automatic
+
+		partition G_DIMCALENDAR = m
+			mode: import
+			source =
+					let
+					    Source = Sql.Database("devmarssyn-ondemand.sql.azuresynapse.net", "mars_ldw", [Query="Select *#(lf)From gold.G_DIMCALENDAR#(lf)WHERE FiscalYear >= '2024'and FiscalYear <= YEAR(GETDATE())"])
+					in
+					    Source
+
+		annotation PBI_NavigationStepName = Navigation
+
+		annotation PBI_ResultType = Table
+

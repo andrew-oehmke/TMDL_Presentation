@@ -1,0 +1,103 @@
+table DynamicMonthAxis
+	lineageTag: 26f37f29-23a6-4d66-9525-dd63ee14edf6
+
+	measure 'Month Sort' =
+			
+			var sortyear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var sortmonth = VALUES(DynamicMonthAxis[SwitchMonth])
+			var monthnum = VALUES(DynamicMonthAxis[MonthNum])
+			RETURN
+			if(sortyear = "TTM",sortmonth,monthnum)
+		formatString: 0
+		lineageTag: 6c40e7d4-4eb2-4956-8350-c637d4eef20e
+
+	column Value
+		formatString: 0
+		lineageTag: 20ae78c9-778f-4ef8-86be-999630970076
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthNum
+		formatString: 0
+		lineageTag: fac78904-a7e2-4036-bfa4-8a47e4fa8376
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [MonthNum]
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonthLabel
+		lineageTag: ff197e73-b7a2-49ce-8200-1cd97f971b28
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MonthLabel]
+
+		annotation SummarizationSetBy = Automatic
+
+	column SwitchMonth =
+			
+			VAR SelectedYear = SELECTEDVALUE(YearSelector[FiscalYear], "TTM")
+			VAR todayMonth = MONTH(TODAY())
+			VAR fiscalMonth = DynamicMonthAxis[MonthNum]
+			Var switchfun = SWITCH(
+			    DynamicMonthAxis[MonthNum],
+			    1,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    2,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    3,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    4,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    5,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    6,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    7,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    8,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    9,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    10,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    11,MOD((todayMonth - fiscalMonth) - 12, 12),
+			    12,MOD((todayMonth - fiscalMonth) - 12, 12))
+			
+			RETURN
+			IF(SelectedYear = "TTM", switchfun,fiscalMonth)
+		formatString: 0
+		lineageTag: a3c445d7-fd2d-4428-88af-e9b55b6fea3f
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DynamicMonthAxis = calculated
+		mode: import
+		source = ```
+				
+				VAR SelectedYear = SELECTEDVALUE(YearSelector[FiscalYear], "TTM")
+				VAR TodayMonth = MONTH(TODAY())
+				
+				RETURN
+				ADDCOLUMNS (
+				    GENERATESERIES(1, 12),
+				    "MonthNum",
+				        SWITCH(
+				            TRUE(),
+				            SelectedYear = "TTM",
+				                MOD(TodayMonth - [Value], 12) + 1,
+				            [Value]
+				        ),
+				    "MonthLabel", 
+				        FORMAT(
+				            DATE(2000,
+				                SWITCH(
+				                    TRUE(),
+				                    SelectedYear = "TTM",
+				                        MOD(TodayMonth - [Value], 12) + 1,
+				                    [Value]
+				                ),
+				                1
+				            ),
+				            "MMM"
+				        )
+				
+				)
+				```
+
+	annotation PBI_Id = b2c731b30faa45feaac0579b4a7103fd
+

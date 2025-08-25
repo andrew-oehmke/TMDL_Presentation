@@ -1,0 +1,2736 @@
+table G_MARS_SALES_DASHBOARD_DATA
+	lineageTag: 84bb1789-47e7-4079-805c-e032eed66627
+
+	measure 'Shipments Last Day' = ```
+			
+			
+			var maxshipdate = [Max Shipped Date]
+			var formula = SUMX(
+			    VALUES(G_MARS_SALES_DASHBOARD_DATA[ShipmentNumber]),
+			    CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[ShippedDate]),G_MARS_SALES_DASHBOARD_DATA[ShippedDate] = maxshipdate)
+			)
+			RETURN
+			
+			if(formula = 0, 0, formula)
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 78574911-8777-447b-b3b9-d260be17dd52
+
+	measure 'OTIF Previous Week' = ```
+			
+			
+			CALCULATE(
+			    DIVIDE(
+			        CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsOnTimeInFull] = 1, G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 1),
+			            CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]), G_MARS_SALES_DASHBOARD_DATA[IsComplete] =1)),             
+			        G_DIMCALENDAR[WeekOffset] = 2)
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 44ef410d-f2ad-4f7f-8d24-d34f8d330c52
+
+	measure 'Order To Invoice Date Last Week' =
+			
+			AVERAGEX (
+			                    FILTER (
+			                        G_MARS_SALES_DASHBOARD_DATA,
+			                        LOOKUPVALUE (
+			                            G_DIMCALENDAR[WeekOffset],
+			                            G_DIMCALENDAR[Date], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]
+			                                ) = 1
+			                    ),
+			                    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[OrderDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY )
+			                )
+		displayFolder: 01_Measures
+		lineageTag: 78574911-8777-447b-b3b9-d260be17dd51
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue SqFt YTD' = ```
+			
+			    // var fiscalmonth = LOOKUPVALUE(G_DIMCALENDAR[FiscalMonth],G_DIMCALENDAR[Date],TODAY())
+			    // var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])),G_DIMCALENDAR[FiscalMonth] = fiscalmonth,G_DIMCALENDAR[FiscalYear] = convertyear,REMOVEFILTERS('YearSelector'[FiscalYear]))
+			
+			
+			var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			var fiscalmonth = LOOKUPVALUE(G_DIMCALENDAR[FiscalMonth],G_DIMCALENDAR[Date],TODAY())
+			var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])), G_DIMCALENDAR[FiscalYear] = convertyear)
+			var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			
+			  
+			```
+		displayFolder: 01_Measures
+		lineageTag: 40ef410d-f2ad-4f7f-8d24-d34f8d330c56
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue Employee YTD' = ```
+			
+			var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])), G_DIMCALENDAR[FiscalYear] = convertyear)
+			var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			
+			  
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 94ef410d-f2ad-4f7f-8d24-d34f8d330c5d
+
+	measure 'Amount On Backorder Visual Metric' = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[BackOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0 )
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 24ef410d-f2ad-4f7f-8d24-d34f8d330c53
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'On Hold Status Count' =
+			
+			var formula = CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]), G_MARS_SALES_DASHBOARD_DATA[OnHoldStatus] <> "", G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0)
+			RETURN
+			
+			if(formula = 0, 0, formula)
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 52ef410d-f2ad-4f7f-8d24-d34f8d330c52
+
+	measure 'Daily Sales Rate Card' =
+			
+			var maxinvoicedate = [Max Invoice Date]
+			var salesrate = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] = maxinvoicedate)
+			RETURN
+			FORMAT(salesrate/1000, "$#,##0.0K")
+		displayFolder: 01_Measures
+		lineageTag: 25ef410d-f2ad-4f7f-8d24-d34f8d330c53
+
+	measure 'Prior Day Entered' = ```
+			
+			
+			var orderdate = [Max Order Date]
+			var formula = CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[OrderDate] = orderdate)
+			RETURN
+			
+			if(formula = 0, 0, formula)
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 16ef410d-f2ad-4f7f-8d24-d34f8d330c54
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Prior Day Shipped' =
+			
+			
+			var shipdate = [Max Shipped Date]
+			RETURN
+			CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[ShipmentNumber]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] = shipdate)
+		displayFolder: 01_Measures
+		lineageTag: 19ef410d-f2ad-4f7f-8d24-d34f8d330c54
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Today''s Date Last Year' = ```
+			
+			VAR valueyear = IFERROR(CONVERT([Selected Year] , INTEGER), BLANK())
+			RETURN
+			IF(NOT ISBLANK(valueyear), Date(valueyear -1,MONTH(TODAY()),DAY(TODAY())), BLANK())
+			
+			
+			```
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 82b0abe1-45f9-4a5a-94fe-e16226373c2a
+
+	measure 'Blank Space' = BLANK()
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 06ef0aae-56e1-422d-8f42-c727679a74e1
+
+	measure 'Selected Year' = SELECTEDVALUE(YearSelector[FiscalYear])
+		displayFolder: 01_Measures
+		lineageTag: 5f989716-915a-4111-b928-135c469d7d30
+
+	measure 'Beginning of Last Year' = ```
+			
+			VAR valueyear = IFERROR(CONVERT([Selected Year] , INTEGER), BLANK())
+			RETURN
+			IF(NOT ISBLANK(valueyear), DATE(valueyear -1 , 1, 1), BLANK())
+			
+			```
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 0998c677-6957-4627-bca3-e2478b2ef93d
+
+	measure 'TTM Beginning Date' = [Today's Date Last Year] - 365
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: b3058b3d-dbba-4617-be05-8c5f984f6a7d
+
+	measure 'Previous Year First Date' =
+			VAR valueyear = IFERROR(CONVERT([Selected Year] , INTEGER) -1, BLANK())
+			RETURN
+			IF(NOT ISBLANK(valueyear), DATE(valueyear, 1, 1), BLANK())
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 25699d5f-81cf-436d-a22c-3ce135391816
+
+	measure 'Previous Year Last Date' =
+			VAR valueyear = IFERROR(CONVERT([Selected Year] , INTEGER) -1, BLANK())
+			RETURN
+			IF(NOT ISBLANK(valueyear), DATE(valueyear, 12, 31), BLANK())
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 3bc7604b-cb94-448e-9948-165e217b15bd
+
+	measure 'Last Refresh Date' = CONCATENATE("Last Refresh ",[Max Invoice Date])
+		displayFolder: 01_Measures
+		lineageTag: 59aa6c3e-b0f9-4227-a6fd-eabfea347456
+
+	measure 'This Year Date Range' =
+			var today_365 = TODAY() - 365
+			Var ThisYearBeginning = CONVERT(DATE(YEAR(TODAY()),1,1),STRING)
+			Var ThisYearEnd = CONCATENATE(" - ",CONVERT(TODAY(),STRING))
+			
+			
+			RETURN
+				IF([Selected Year] = "TTM", CONCATENATE(today_365,ThisYearEnd),
+						IF([Selected Year] = CONVERT(YEAR(TODAY()), STRING),  CONCATENATE(ThisYearBeginning,ThisYearEnd),
+							""
+				))
+		displayFolder: 01_Measures
+		lineageTag: 259df205-141e-42d4-b30b-7df139bcd7eb
+
+	measure 'Previous Year Date Range' =
+			var TTM_Beginning = CONVERT([TTM Beginning Date],STRING)
+			var TTM_End = CONCATENATE(" - ",[Today's Date Last Year])
+			Var PYYearBeginning = CONVERT([Beginning of Last Year],STRING)
+			Var PYYearEnd = CONCATENATE(" - ",[Today's Date Last Year])
+			RETURN
+				IF([Selected Year] = "TTM", CONCATENATE(TTM_Beginning,TTM_End),
+						IF([Selected Year] = CONVERT(YEAR(TODAY()), STRING),  CONCATENATE(PYYearBeginning,PYYearEnd),
+							""
+				))
+		displayFolder: 01_Measures
+		lineageTag: d2f1b8ae-491e-4e7a-9ccb-7b8744a02694
+
+	measure 'Max Invoice Date' = CALCULATE(MAX(G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]),G_MARS_SALES_DASHBOARD_DATA[SalesAmount] > 0)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 22c96e96-fcdb-474e-b15f-54327f6c4cb9
+
+	measure 'Sales MTD' = ```
+			
+			    var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = convertyear)
+			
+			RETURN
+			   if([Selected Year] = "TTM" && thisyear = 0, 0,
+			    if([Selected Year] = "TTM", thisyear,
+			        if(thisyear = 0,0,thisyear))
+			)
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: e2bf3d5a-ccc2-4c48-9f94-e89278508067
+
+	measure 'This Month' =
+			3
+			
+			// LOOKUPVALUE(G_DIMCALENDAR[FiscalMonth],G_DIMCALENDAR[Date],TODAY())
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 9457bc9c-d23d-4235-9baf-cc0075fe2213
+
+	measure 'This Year' = LOOKUPVALUE(G_DIMCALENDAR[FiscalYear],G_DIMCALENDAR[Date],TODAY())
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 4b98cb69-fe8e-4334-b857-fd4d86836e72
+
+	measure 'Convert Fiscal Year Integer' = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: bc32c4c4-9909-4ee7-9575-62404d885d89
+
+	measure 'Sales YTD Card & Table' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 037f5c6d-e6f0-4727-9ccb-55cea24698d6
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'YTD/TTM Date Range' =
+			
+			
+			VAR thisfiscalyear = CONVERT([This Year],STRING)
+			var ttmbeginning = CONVERT(TODAY() - 365,STRING)
+			var ttmend = CONCATENATE(" - ",CONVERT(TODAY(),STRING))
+			Var YearBeginning = CONVERT(DATE([Convert Fiscal Year Integer],1,1),STRING)
+			Var YearEnd = CONCATENATE(" - ",DATE([Convert Fiscal Year Integer],12,31))
+			var ThisYear = "YTD"
+			
+			
+			RETURN
+			    // CONCATENATE(YearBeginning,YearEnd))
+			    IF([Selected Year] = "TTM", CONCATENATE(ttmbeginning,ttmend),
+			        IF([Selected Year] = thisfiscalyear,ThisYear,CONCATENATE(YearBeginning,YearEnd)))
+		displayFolder: 01_Measures
+		lineageTag: c44794fd-de48-41d8-9dd9-1b2ad0a54efa
+
+	measure 'Sales Previous YTD Table' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var ttm = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[TTM Beginning Date],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			                                            
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K" ),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: a647ad5d-54ed-4084-8328-7b52b2190523
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Sales This Year Arrow' = ```
+			
+			
+			var percentage = DIVIDE( CALCULATE([Sales YTD] - [Sales Previous YTD]), [Sales Previous YTD])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Sales YTD] = 0 || [Sales Previous YTD] = 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," YoY"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: d4aba051-574e-422a-85fe-2a8712f85ab2
+
+	measure 'Sales This Year Conditional Format' = DIVIDE( CALCULATE([Sales YTD] - [Sales Previous YTD]), [Sales Previous YTD])
+		displayFolder: 01_Measures
+		lineageTag: d8ab070a-f98f-43fd-a003-04d1708a07e1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Sales Previous MTD' = ```
+			
+			    var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var ttmthisyear = [This Year]
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = convertyear - 1)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = ttmthisyear - 1)
+			
+			RETURN
+			   if([Selected Year] = "TTM" && thisyear = 0, 0,
+			    if([Selected Year] = "TTM", ttm,
+			    if(thisyear = 0,0,thisyear))
+			)
+			```
+		displayFolder: 01_Measures
+		lineageTag: 79ca09dd-9ceb-4a0e-bcc5-36240c9b7174
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Sales MTD Arrow' = ```
+			
+			
+			var percentage = DIVIDE( CALCULATE([Sales MTD] - [Sales Previous MTD]), [Sales Previous MTD])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Sales MTD]  =  0 || [Sales Previous MTD] = 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," YoY"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 49d08566-6e73-41e6-9a0e-4f62d6346e67
+
+	measure 'Sales MTD Conditional Format' = DIVIDE( CALCULATE([Sales MTD] - [Sales Previous MTD]), [Sales Previous MTD])
+		displayFolder: 01_Measures
+		lineageTag: 49192d3f-2ead-47a9-9c0e-52d3c9dea419
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Sales This Year YTD Visual' = ```
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear,todayyear-1),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Total Sales],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Total Sales],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: d234772a-1fd8-420a-b305-98782a8ad5b9
+
+	measure 'Total Sales' = sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount])
+		displayFolder: 01_Measures
+		lineageTag: a525c651-cb16-4708-aad1-4685800eb2d6
+
+	measure 'Sales Previous YTD Visual' = ```
+			
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear-1,todayyear-2),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Total Sales],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Total Sales],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear - 1 &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: 1800fe70-b95a-4a6d-9323-0314a5484471
+
+	measure 'Amount On Backorder Card' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[BackOrderedAmount]), G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0, G_DIMCALENDAR_REQUESTEDDATE[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[BackOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0, G_DIMCALENDAR_REQUESTEDDATE[Date] >= TODAY() - 365)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 69b2c947-544e-4387-ad1c-d927528606d3
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Key Item Categories Date Range' =
+			
+			
+			VAR thisfiscalyear = CONVERT([This Year],STRING)
+			var ttmbeginning = CONVERT(TODAY() - 365,STRING)
+			var ttmend = CONCATENATE(CONCATENATE(" - ",CONVERT(TODAY(),STRING)),")")
+			Var YearBeginning = CONVERT(DATE([Convert Fiscal Year Integer],1,1),STRING)
+			Var YearEnd = CONCATENATE(CONCATENATE(" - ",DATE([Convert Fiscal Year Integer],12,31)),")")
+			var ThisYear = "Key Item Categories - YTD"
+			
+			
+			RETURN
+			    // CONCATENATE(YearBeginning,YearEnd))
+			    IF([Selected Year] = "TTM", CONCATENATE("Key Item Categories - (",CONCATENATE(ttmbeginning,ttmend)),
+			        IF([Selected Year] = thisfiscalyear,ThisYear,CONCATENATE("Key Item Categories - (",CONCATENATE(YearBeginning,YearEnd))))
+		displayFolder: 01_Measures
+		lineageTag: a86276f2-8d05-4379-83a7-00efb9eea4b8
+
+	measure 'test measure' = DIVIDE(CALCULATE([Order To Invoice Date Last Week] - [Order To Invoice Date Previous Week]), [Order To Invoice Date Previous Week])
+		formatString: 0
+		lineageTag: 80099e12-9a5e-4f97-b80d-73a39626e779
+
+	measure 'Sales MTD Card' = ```
+			
+			   var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			   var convertthisyear = [This Year]
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = convertthisyear)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, "$0",
+			    if([Selected Year] = "TTM", FORMAT(ttm/1000, "$#,##0.0K"),
+			    if(thisyear = 0,"$0",FORMAT(thisyear/1000, "$#,##0.0K")))
+			)
+			```
+		displayFolder: 01_Measures
+		lineageTag: bfbef7f7-a31a-49ba-98bb-3118c68b03d0
+
+	measure 'Sales Previous MTD Card' = ```
+			
+			  var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var currentyear = IFERROR(CONVERT([This Year], STRING), BLANK())
+			    var ttmthisyear = [This Year] - 1 
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = convertyear - 1)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = ttmthisyear)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, "$0",
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K PYTTM"),
+			    if(thisyear = 0,"$0",
+			        If([Selected Year] = currentyear,FORMAT(thisyear/1000, "$#,##0.0K PYMTD"),FORMAT(thisyear/1000, "$#,##0.0K PYM"))
+			    
+			    )))
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: d8ec0d26-0d7b-4572-944f-410985d09405
+
+	measure 'Sales Previous YTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var ttm = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[TTM Beginning Date],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			                                            
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 1f771241-292a-440c-beb1-8de03676351b
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Sales YTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			RETURN
+			   if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: f82e11bb-c99b-4765-8b2a-12873ddf8805
+
+	measure 'Max Shipped Date' = MAX(G_MARS_SALES_DASHBOARD_DATA[ShippedDate])
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: a4ab1403-0220-4a83-8c00-e8e0c8afcf26
+
+	measure SecondLatestShippedDate = ```
+			
+			    MINX(
+			        TOPN(2, VALUES(G_MARS_SALES_DASHBOARD_DATA[ShippedDate]), G_MARS_SALES_DASHBOARD_DATA[ShippedDate], DESC),
+			        G_MARS_SALES_DASHBOARD_DATA[ShippedDate]
+			    )
+			
+			```
+		formatString: General Date
+		displayFolder: 01_Measures
+		lineageTag: 9c809542-3826-4747-be78-8aa582ed92b4
+
+	measure 'Shipments Second To Last Day' =
+			
+			
+			var secondtolast = [SecondLatestShippedDate]
+			
+			RETURN
+			SUMX(
+			    VALUES(G_MARS_SALES_DASHBOARD_DATA[ShipmentNumber]),
+			    CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[ShippedDate]),G_MARS_SALES_DASHBOARD_DATA[ShippedDate] = secondtolast)
+			)
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 9c913ab7-d294-4a17-ad14-7f6a02df4d81
+
+	measure 'Shipments with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Shipments Last Day] - [Shipments Second To Last Day]), [Shipments Second To Last Day])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Shipments Last Day] = 0 || [Shipments Second To Last Day]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," DoD"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 518ea401-13f9-4e6b-b6af-fce6e743a3f1
+
+	measure 'Shipments Conditional Format' = DIVIDE(CALCULATE([Shipments Last Day] - [Shipments Second To Last Day]), [Shipments Second To Last Day])
+		displayFolder: 01_Measures
+		lineageTag: 87dc40fd-bf6f-4fbe-a62f-6904e7e94722
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Shipments Last Week' =
+			
+			
+			CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[ShipmentNumber]),G_DIMCALENDAR_SHIPPEDDATE[WeekOffset] = 0)
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 0e98a406-4a7c-484e-9047-fdf5847f5a86
+
+	measure 'Shipments Previous Week' =
+			
+			
+			CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[ShipmentNumber]),G_DIMCALENDAR_SHIPPEDDATE[WeekOffset] = 1)
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 05c7297c-a82f-4b6a-974a-3359e20667a3
+
+	measure 'Fill Rate Last Week' =
+			
+			CALCULATE(
+			    DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity])),
+			    G_DIMCALENDAR[WeekOffset] = 1)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01_Measures
+		lineageTag: 6446a35a-f141-437c-9307-8d74a7786a34
+
+	measure 'Fill Rate with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Fill Rate Last Week] - [Fill Rate Previous Week]), [Fill Rate Previous Week])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Fill Rate Previous Week]= 0 || [Fill Rate Last Week]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," WoW"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 91f17f70-5680-42f7-b299-5b8ef8ff8ce2
+
+	measure 'Fill Rate Conditional Format' = DIVIDE(CALCULATE([Fill Rate Last Week] - [Fill Rate Previous Week]), [Fill Rate Previous Week])
+		displayFolder: 01_Measures
+		lineageTag: 5bf31a65-5bd9-49a6-916b-685577b7f769
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure Max12Week = ```
+			LOOKUPVALUE(G_DIMCALENDAR[WeekNumber],G_DIMCALENDAR[WeekOffset],0)
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 9695806b-a021-472b-bfc3-4c4978c05516
+
+	measure 'Fill Rate PY Visual' = ```
+			
+			
+			// var min12 = [Min12Week]
+			// var max12 = [Max12Week]
+			
+			// RETURN
+			// CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity])),
+			//                 G_DIMCALENDAR[WeekNumber] >=min12 && G_DIMCALENDAR[WeekNumber] <= max12,
+			//                 G_DIMCALENDAR[WeekOffset] >=50 && G_DIMCALENDAR[WeekOffset] <=65)
+			
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear-1,todayyear-2),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Fill Rate],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Fill Rate],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear - 1 &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		displayFolder: 01_Measures
+		lineageTag: bbb1d64b-69eb-4d4b-b70b-eed69f725141
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'OTIF Last Week' = ```
+			
+			
+			CALCULATE(
+			    DIVIDE(
+			        CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsOnTimeInFull] = 1, G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 1),
+			            CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]), G_MARS_SALES_DASHBOARD_DATA[IsComplete] =1)),               
+			        G_DIMCALENDAR[WeekOffset] = 1)
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 41535944-9c44-44e9-ad2f-58de9419051c
+
+	measure 'OTIF with Arrow' = ```
+			
+			
+			var percentage = [OTIF Last Week] - [OTIF Previous Week]
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([OTIF Previous Week]= 0 || [OTIF Last Week]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," WoW"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 2641e8f5-0f8d-424b-b8d2-091b21e1c01f
+
+	measure 'OTIF  Conditional Format' = [OTIF Last Week] - [OTIF Previous Week]
+		displayFolder: 01_Measures
+		lineageTag: 6deb9d11-c447-4372-a45e-c50e0c7cb3eb
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'OTIF This Year' = ```
+			
+			    CALCULATE(DIVIDE(
+			        CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsOnTimeInFull] = 1, G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 1),
+			            CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]), G_MARS_SALES_DASHBOARD_DATA[IsComplete] =1)),  
+			                G_DIMCALENDAR[WeekOffset] >=0 && G_DIMCALENDAR[WeekOffset] <= 11)
+			
+			
+			
+			
+			
+			```
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01_Measures
+		lineageTag: a41c8bc4-65bb-4aa1-b358-839d4e90e4a5
+
+	measure 'OTIF PY' = ```
+			
+			
+			CALCULATE(DIVIDE(
+			        CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsOnTimeInFull] = 1, G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 1),
+			            CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]), G_MARS_SALES_DASHBOARD_DATA[IsComplete] =1)),  
+			                G_DIMCALENDAR[WeekOffset] >=52 && G_DIMCALENDAR[WeekOffset] <=63)
+			
+			```
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01_Measures
+		lineageTag: 3291ac00-88e9-4bfd-8d0f-a61afa98731d
+
+	measure 'Order To Invoice Date Previous Week' =
+			
+			AVERAGEX (
+			                    FILTER (
+			                        G_MARS_SALES_DASHBOARD_DATA,
+			                        LOOKUPVALUE (
+			                            G_DIMCALENDAR[WeekOffset],
+			                            G_DIMCALENDAR[Date], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]
+			                                ) = 1
+			                    ),
+			                    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[OrderDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY )
+			                )
+		displayFolder: 01_Measures
+		lineageTag: 53a7be7f-b71e-4796-a7ab-92fc02397b58
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Order to Invoice with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Order To Invoice Date Last Week] - [Order To Invoice Date Previous Week]), [Order To Invoice Date Previous Week])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Order To Invoice Date Last Week]= 0 || [Order To Invoice Date Previous Week]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," WoW"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 1cdfdaee-ecbf-4e8e-befe-77c707d744e3
+
+	measure 'Order to Invoice Conditional Format' = DIVIDE(CALCULATE([Order To Invoice Date Last Week] - [Order To Invoice Date Previous Week]), [Order To Invoice Date Previous Week])
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: c1fde386-b9c0-4383-9cb9-e20aecd09374
+
+	measure 'Request To Invoice Date Last Week' = ```
+			
+			            AVERAGEX (
+			                    FILTER (
+			                        G_MARS_SALES_DASHBOARD_DATA,
+			                        LOOKUPVALUE (
+			                            G_DIMCALENDAR[WeekOffset],
+			                            G_DIMCALENDAR[Date], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]
+			                                ) = 1
+			                            
+			                    ),
+			                    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[RequestedDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY )
+			                )
+			```
+		displayFolder: 01_Measures
+		lineageTag: 78574911-8772-447b-b3b9-d260be17dd51
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Request To Invoice Date Previous Week' = ```
+			
+			AVERAGEX (
+			                    FILTER (
+			                        G_MARS_SALES_DASHBOARD_DATA,
+			                        LOOKUPVALUE (
+			                            G_DIMCALENDAR[WeekOffset],
+			                            G_DIMCALENDAR[Date], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]
+			                                ) = 2
+			                            
+			                    ),
+			                    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[RequestedDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY )
+			                )
+			```
+		displayFolder: 01_Measures
+		lineageTag: 53a7be7f-b21e-4796-a7ab-92fc02397b58
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Request to Invoice with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Request To Invoice Date Last Week] - [Request To Invoice Date Previous Week]), [Request To Invoice Date Previous Week])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Request To Invoice Date Last Week]= 0 || [Request To Invoice Date Previous Week]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," WoW"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 1cdfdaee-e2bf-4e8e-befe-77c707d744e3
+
+	measure 'Request to Invoice Conditional Format' = DIVIDE(CALCULATE([Request To Invoice Date Last Week] - [Request To Invoice Date Previous Week]), [Request To Invoice Date Previous Week])
+		displayFolder: 01_Measures
+		lineageTag: c1fde286-b9c0-4383-9cb9-e20aecd09374
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Pick to Shipped Date Last Week' = ```
+			
+			            AVERAGEX (
+			                    FILTER (
+			                        G_MARS_SALES_DASHBOARD_DATA,
+			                        LOOKUPVALUE (
+			                            G_DIMCALENDAR[WeekOffset],
+			                            G_DIMCALENDAR[Date], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]
+			                                ) = 1
+			                        
+			                    ),
+			                    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[PickedDate], G_MARS_SALES_DASHBOARD_DATA[ShippedDate], DAY )
+			                )
+			```
+		displayFolder: 01_Measures
+		lineageTag: 78574911-8772-447b-b3b9-d260be11dd51
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Pick to Shipped Date Previous Week' = ```
+			
+			            AVERAGEX (
+			                    FILTER (
+			                        G_MARS_SALES_DASHBOARD_DATA,
+			                        LOOKUPVALUE (
+			                            G_DIMCALENDAR[WeekOffset],
+			                            G_DIMCALENDAR[Date], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]
+			                                ) = 2
+			                        
+			                    ),
+			                    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[PickedDate], G_MARS_SALES_DASHBOARD_DATA[ShippedDate], DAY )
+			                )
+			
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 53a7be7f-b21e-4796-a7ab-92fc02197b58
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Pick to Shipped with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Pick to Shipped Date Last Week] - [Pick to Shipped Date Previous Week]), [Pick to Shipped Date Previous Week])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Pick to Shipped Date Last Week]= 0 || [Pick to Shipped Date Previous Week]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," WoW"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 1cdfdaee-e2bf-4e8e-befe-77c7071744e3
+
+	measure 'Pick to Shipped Conditional Format' = DIVIDE(CALCULATE([Pick to Shipped Date Last Week] - [Pick to Shipped Date Previous Week]), [Pick to Shipped Date Previous Week])
+		displayFolder: 01_Measures
+		lineageTag: c1fde286-b9c0-4383-9cb9-e20aec109374
+
+	measure 'Pick to Shipped Date YTD' =
+			
+			
+			var thisyear = [This Year]
+			
+			RETURN
+			AVERAGEX (
+			    FILTER (
+			        G_MARS_SALES_DASHBOARD_DATA,
+			        YEAR(G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]) = thisyear
+			    ),
+			    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[PickedDate], G_MARS_SALES_DASHBOARD_DATA[ShippedDate], DAY)
+			)
+		displayFolder: 01_Measures
+		lineageTag: 581116fc-7395-473f-ad87-900a4414aa65
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Order to Invoice Date YTD' =
+			
+			var thisyear = [This Year]
+			
+			RETURN
+			AVERAGEX (
+			    FILTER (
+			        G_MARS_SALES_DASHBOARD_DATA,
+			        YEAR(G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]) = thisyear
+			    ),
+			    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[OrderDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY)
+			)
+		displayFolder: 01_Measures
+		lineageTag: 36e2a8e9-cf8c-4ac5-8dff-6dd912e97b0f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Request to Invoice Date YTD' =
+			
+			var thisyear = [This Year]
+			
+			RETURN
+			AVERAGEX (
+			    FILTER (
+			        G_MARS_SALES_DASHBOARD_DATA,
+			        YEAR(G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]) = thisyear
+			    ),
+			    DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[RequestedDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY)
+			)
+		displayFolder: 01_Measures
+		lineageTag: c81cff64-49b4-4b68-acd8-0f31c7a775b5
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue SqFT Previous YTD Visual' = ```
+			
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear-1,todayyear-2),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Revenue SqFt Metric],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			       [Revenue SqFt Metric],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear - 1 &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 18228f85-705a-4187-baa2-b4b44bb1965f
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Revenue Employee This Year YTD Visual' = ```
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear,todayyear-1),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Revenue Employee Metric],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Revenue Employee Metric],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 9761fb33-5937-411c-8d27-e6027483dad3
+
+	measure 'Revenue SqFt This Year YTD Visual' = ```
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear,todayyear-1),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Revenue SqFt Metric],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Revenue SqFt Metric],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 3764489b-c968-4df4-b4ac-543f69b42a7e
+
+	measure 'Revenue Employee Previous YTD Visual' = ```
+			
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear-1,todayyear-2),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Revenue Employee Metric],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Revenue Employee Metric],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear - 1 &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 290d220d-7ace-42b2-a779-44af9e38c31f
+
+	measure 'Revenue Employee Previous YTD Card and Table' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])),DATESBETWEEN(G_DIMCALENDAR[Date],[TTM Beginning Date],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			                                            
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: b36c28b7-4517-4c81-b354-99263aa986d0
+
+	measure 'Revenue SqFT Previous YTD Card and Table' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])),DATESBETWEEN(G_DIMCALENDAR[Date],[TTM Beginning Date],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			                                            
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 8355294b-e538-4717-87eb-24ca70d30dd6
+
+	measure 'Revenue Employee YTD Card & Table' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: ab596490-cd4f-409e-9e62-cfa73fb25407
+
+	measure 'Revenue SqFt YTD Card & Table' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 78a8ab15-1928-4b45-927d-440daf3d60c7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue Employee This Year with Arrow' = ```
+			
+			
+			var percentage = DIVIDE( CALCULATE([Revenue Employee YTD] - [Revenue Employee Previous YTD]), [Revenue Employee Previous YTD])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Revenue Employee YTD] = 0 || [Revenue Employee Previous YTD] = 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," YoY"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 2ac58c27-d4bd-4165-a284-d61868b0a520
+
+	measure 'Revenue SqFt This Year with Arrow' = ```
+			
+			
+			var percentage = DIVIDE( CALCULATE([Revenue SqFt YTD] - [Revenue SqFT Previous YTD]), [Revenue SqFT Previous YTD])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Revenue SqFt YTD] = 0 || [Revenue SqFT Previous YTD] = 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," YoY"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 9dc9f602-1bbc-479f-8467-50fb896e3608
+
+	measure 'Revenue SqFt Conditional Format' = DIVIDE( CALCULATE([Revenue SqFt YTD] - [Revenue SqFT Previous YTD]), [Revenue SqFT Previous YTD])
+		displayFolder: 01_Measures
+		lineageTag: 46b7d509-92f1-4d91-a7d8-636a66cf2a01
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue Employee Previous YTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount])),DATESBETWEEN(G_DIMCALENDAR[Date],[TTM Beginning Date],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			                                            
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		displayFolder: 01_Measures
+		lineageTag: e5328bc1-688a-4f41-a5c9-9d57584832f5
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue SqFt Previous YTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var fiscalmonth = LOOKUPVALUE(G_DIMCALENDAR[FiscalMonth],G_DIMCALENDAR[Date],TODAY())
+			    var thisyear = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])),G_DIMCALENDAR[FiscalMonth] = fiscalmonth,G_DIMCALENDAR[FiscalYear] = convertyear,REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var ttm = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt])),DATESBETWEEN(G_DIMCALENDAR[Date],[TTM Beginning Date],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			                                            
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		displayFolder: 01_Measures
+		lineageTag: bbb6e94f-365b-4dc9-8ff5-7c06c2f9d618
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue Employee Conditional Format' = DIVIDE( CALCULATE([Revenue Employee YTD] - [Revenue Employee Previous YTD]), [Revenue Employee Previous YTD])
+		displayFolder: 01_Measures
+		lineageTag: 712db7ce-ca46-4166-9686-b5c432a79050
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue Employee Metric' = DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[EmployeeCount]))
+		displayFolder: 01_Measures
+		lineageTag: 2a702eb5-006b-41e8-9074-c6eb9daab7ea
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Revenue SqFt Metric' = DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),SUM(EmployeeSqFt[SqFt]))
+		displayFolder: 01_Measures
+		lineageTag: a970bb00-4842-4fd3-89db-7e3803d6d288
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Fill Rate' = CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity])))
+		displayFolder: 01_Measures
+		lineageTag: 35771d7f-df83-4dee-bdef-0f62a17311a5
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Fill Rate This Year Static' =
+			
+			
+			CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity])),
+			                        G_DIMCALENDAR[WeekOffset] >=0 && G_DIMCALENDAR[WeekOffset] <= 11)
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 646de39e-60ac-42b3-8882-d1e62746620f
+
+	measure 'Fill Rate PY Static' =
+			
+			
+			CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity])),
+			                G_DIMCALENDAR[WeekOffset] >=52 && G_DIMCALENDAR[WeekOffset] <=63)
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 700be290-08e9-4f5b-866b-7fd2bb3c6e16
+
+	measure 'Open Orders Amount MTD Card' = ```
+			
+			
+			    var mindate = [Min Fiscal This Month Date]
+			    var maxdate = [Max Fiscal This Month Date]
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[OpenOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0, G_MARS_SALES_DASHBOARD_DATA[RequestedDate] >= mindate && G_MARS_SALES_DASHBOARD_DATA[RequestedDate] <= maxdate)
+			
+			RETURN
+			FORMAT(thisyear/1000, "$#,##0.0K")
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 0dd217b7-824a-40a2-9bfe-59e2d1af26fe
+
+	measure 'Open Orders Amount' = ```
+			CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[OpenOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0)
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 9cf361b2-e9f1-4d09-b09e-90db63c656aa
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Open Orders Cumulative Sales MTD' = ```
+			
+			VAR MaxVisibleDate = MAX(G_DIMCALENDAR[Date])
+			var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			var convertyear = IFERROR(CONVERT([This Year], INTEGER), BLANK())
+			var thismonth = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = convertyear)
+			RETURN
+			CALCULATE (
+			    sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),
+			    FILTER (
+			        ALL(G_DIMCALENDAR[Date]),
+			        G_DIMCALENDAR[Date] <= MaxVisibleDate
+			            && MONTH(G_DIMCALENDAR[Date]) = convertmonth
+			            && YEAR(G_DIMCALENDAR[Date]) = convertyear
+			    )
+			)
+			// CALCULATE (
+			//     thismonth,
+			//     FILTER (
+			//         ALL(G_DIMCALENDAR[Date]),
+			//         G_DIMCALENDAR[Date] <= MaxVisibleDate
+			//             && MONTH(G_DIMCALENDAR[Date]) = MONTH( TODAY())
+			//             && YEAR(G_DIMCALENDAR[Date]) = YEAR (TODAY())
+			//     )
+			// )
+			
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: 6ee3f72a-a475-4d90-8856-fd7b6f47a41f
+
+	measure 'Open Order Count MTD' = ```
+			
+			
+			var mindate = [Min Fiscal This Month Date]
+			var maxdate = [Max Fiscal This Month Date]
+			var formula = CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0,G_MARS_SALES_DASHBOARD_DATA[RequestedDate] >= mindate && G_MARS_SALES_DASHBOARD_DATA[RequestedDate] <= maxdate)
+			RETURN
+			
+			if(formula = 0, 0, formula)
+			    
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: baf012d0-1e17-4558-bcae-433f1087040f
+
+	measure 'Open Order Count' = ```
+			
+			var formula = CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0)
+			Return
+			if(formula = 0, 0, formula)
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 1e0683e6-0f0c-43b7-ad5b-7c565cc511a6
+
+	measure 'Open Order Count Next Month' = ```
+			
+			
+			var mindate = [Min Fiscal Next Month Date]
+			var maxdate = [Max Fiscal Next Month Date]
+			var formula = CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0,G_MARS_SALES_DASHBOARD_DATA[RequestedDate] >= mindate && G_MARS_SALES_DASHBOARD_DATA[RequestedDate] <= maxdate)
+			RETURN
+			
+			if(formula = 0, 0, formula)
+			
+			
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: dd8952cb-3ab8-407b-ab38-3b7dc9981feb
+
+	measure 'Open Order Count Past Next Month' = ```
+			
+			
+			var mindate = [Min Fiscal Past Next Month Date]
+			var maxdate = [Max Fiscal Past Next Month Date]
+			var formula = CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0,G_MARS_SALES_DASHBOARD_DATA[RequestedDate] >= mindate && G_MARS_SALES_DASHBOARD_DATA[RequestedDate] <= maxdate)
+			
+			
+			RETURN
+			if(formula = 0, 0, formula)
+			
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 54914559-6060-4d5c-9ba8-65d07b343334
+
+	measure 'On Backorder' =
+			
+			var formula = CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[BackOrderedAmount] > 0, G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0)
+			RETURN
+			
+			if(formula = 0, 0, formula)
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 3f4dd39e-392b-46f5-a231-78705a927fae
+
+	measure 'Daily Sales This Week' =
+			
+			
+			var mindate = [MinWeekOffSet0]
+			var maxdate = [MaxWeekOffSet0]
+			
+			RETURN
+			CALCULATE(Sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] >= mindate && G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] <= maxdate)
+			
+			//Use for prod
+			// SUMX(
+			//     VALUES(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),
+			//     CALCULATE(Sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] >= TODAY() - 6))
+		displayFolder: 01_Measures
+		lineageTag: 64e8a27d-ba96-49b2-9c57-c917bcce0959
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Daily Sales Rate Last Week' = ```
+			
+			
+			var mindate = [MinWeekOffSet1]
+			var maxdate = [MaxWeekOffSet1]
+			
+			RETURN
+			CALCULATE(Sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] >= mindate && G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] <= maxdate)
+			
+			// Ude for prod
+			// SUMX(
+			//     VALUES(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),
+			//     CALCULATE(Sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] >= TODAY() - 13,G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] <= TODAY() - 7 ))
+			
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: f81f32c2-9494-4374-980e-bbe69a73bee2
+
+	measure 'Max Order Date' = MAX(G_MARS_SALES_DASHBOARD_DATA[OrderDate])
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: aee6f086-2b90-476f-b3f8-5f1ebd0d6a8a
+
+	measure 'Orders This Week' = ```
+			
+			
+			CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_DIMCALENDAR_ORDERDATE[WeekOffset] = 0)
+			
+			// SUMX(
+			//     VALUES(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),
+			//     CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[OrderDate] >= TODAY() - 6))
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 072824e2-b40a-49cf-b91a-5ecec910a2ce
+
+	measure 'Orders Last Week' = ```
+			
+			CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_DIMCALENDAR_ORDERDATE[WeekOffset] = 1)
+			
+			
+			// SUMX(
+			//     VALUES(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),
+			//     CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderDate]),G_MARS_SALES_DASHBOARD_DATA[OrderDate] >= TODAY() - 13,G_MARS_SALES_DASHBOARD_DATA[OrderDate] <= TODAY() - 7 ))
+			
+			```
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 7241628c-4a54-456a-81f3-70f3753a87a6
+
+	measure 'Amount On Hand Card' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[OnHandOrderedAmount]), G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0, G_DIMCALENDAR_REQUESTEDDATE[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[OnHandOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0, G_DIMCALENDAR_REQUESTEDDATE[Date] >= TODAY() - 365)
+			
+			RETURN
+			
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 0fe10aed-3c3f-43af-bf5e-3cf07a2165ca
+
+	measure 'Amount on Hand' = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[OnHandOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0)
+		displayFolder: 01_Measures
+		lineageTag: 965c428f-84de-425a-bbda-d64962c20731
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'This Week' =
+			15
+			
+			// LOOKUPVALUE(G_DIMCALENDAR[WeekNumber],G_DIMCALENDAR[Date],TODAY())
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: aaa37e0e-b400-457c-a57d-e8a625fe2aed
+
+	measure 'Last Week' = [This Week] - 1
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 45e15fcc-abf6-4d47-b1e7-441a03e70f81
+
+	measure 'Previous Week' = [This Week] - 2
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 3fcad734-39bb-41d0-92b7-1785235e042a
+
+	measure 'Pick To Shipped Date' = AVERAGEX(G_MARS_SALES_DASHBOARD_DATA,DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[PickedDate], G_MARS_SALES_DASHBOARD_DATA[ShippedDate], DAY))
+		displayFolder: 01_Measures
+		lineageTag: 48d2dea5-672d-45a7-8197-5ed674fa6bcc
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Request to Invoice Date' =
+			
+			
+			AVERAGEX(G_MARS_SALES_DASHBOARD_DATA,DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[RequestedDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY))
+		displayFolder: 01_Measures
+		lineageTag: 56c243df-46e0-4e6e-872f-3cb63fdaf954
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Order to Invoice Date' = AVERAGEX (G_MARS_SALES_DASHBOARD_DATA,DATEDIFF(G_MARS_SALES_DASHBOARD_DATA[OrderDate], G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DAY))
+		formatString: 0.00
+		displayFolder: 01_Measures
+		lineageTag: dddd3aa0-34b9-4fcd-864c-81d7d9845df2
+
+	measure 'Sales This Year Arrow Table' = ```
+			
+			
+			var percentage = DIVIDE( CALCULATE([Sales YTD] - [Sales Previous YTD]), [Sales Previous YTD])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Sales YTD] = 0 || [Sales Previous YTD] = 0, "", arrow & " " & FORMAT(percentage,"0%"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 4126141e-9541-44c0-b261-d0a8336a054e
+
+	measure 'Fill Rate This Year Card and Table' =
+			
+			
+			var thisyear = [This Year]
+			RETURN
+			// CALCULATE(DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity])),G_DIMCALENDAR[FiscalYear] = thisyear)
+			
+			DIVIDE(
+			    CALCULATE(
+			        SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),
+			        FILTER(
+			            G_MARS_SALES_DASHBOARD_DATA,
+			            G_MARS_SALES_DASHBOARD_DATA[ShippedDate] =
+			                CALCULATE(
+			                    MIN(G_MARS_SALES_DASHBOARD_DATA[ShippedDate]),
+			                    ALLEXCEPT(G_MARS_SALES_DASHBOARD_DATA, G_MARS_SALES_DASHBOARD_DATA[OrderNumber])
+			                )
+			        ),
+			        G_DIMCALENDAR[FiscalYear] = thisyear
+			    ),
+			    CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity]),G_DIMCALENDAR[FiscalYear] = thisyear)
+			)
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 1d5f8911-3f78-4fec-becb-7dbfa3f9fe12
+
+	measure 'Fill Rate Previous Week' =
+			
+			
+			CALCULATE(
+			    DIVIDE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesQuantity]),SUM(G_MARS_SALES_DASHBOARD_DATA[OrderedQuantity])),
+			    G_DIMCALENDAR[WeekOffset] = 2 )
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 6b3f518e-38c8-40a6-b9aa-33469932b3c5
+
+	measure 'OTIF This Year Card & Table' = ```
+			
+			var thisyear = [This Year]
+			RETURN
+			
+			    CALCULATE(DIVIDE(
+			                    CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsOnTimeInFull] = 1, G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 1),
+			                    CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 1)), 
+			                G_DIMCALENDAR[FiscalYear] = thisyear)
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 594c3d17-8963-4798-b9e4-8d5ffb26d6a5
+
+	measure 'Sales MTD Budget Tracker' = ```
+			
+			var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			var convertyear = IFERROR(CONVERT([This Year], INTEGER), BLANK())
+			var thismonth = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[FiscalMonth] = convertmonth, G_DIMCALENDAR[FiscalYear] = convertyear)
+			RETURN
+			FORMAT(thismonth/1000, "$#,##0.0K")
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 8e25c622-be38-448c-92fd-1636a5a40f0f
+
+	measure 'Min Fiscal This Month Date' =
+			
+			var thismonth = [This Month]
+			var thisyear = [This Year]
+			RETURN
+			CALCULATE(min(G_DIMCALENDAR[Date]),G_DIMCALENDAR[FiscalMonth] = thismonth,G_DIMCALENDAR[FiscalYear] = thisyear)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 1c0055dc-f297-4e7a-8dd9-6f2eae2ff446
+
+	measure 'Max Fiscal This Month Date' =
+			
+			var thismonth = [This Month]
+			var thisyear = [This Year]
+			RETURN
+			CALCULATE(max(G_DIMCALENDAR[Date]),G_DIMCALENDAR[FiscalMonth] = thismonth,G_DIMCALENDAR[FiscalYear] = thisyear)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 3f2d9599-4d74-472c-9671-998cb9824d1f
+
+	measure 'Open Orders Amount MTD Visual' = ```
+			
+			
+			    var mindate = [Min Fiscal This Month Date]
+			    var maxdate = [Max Fiscal This Month Date]
+			
+			
+			RETURN
+			CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[OpenOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0, G_MARS_SALES_DASHBOARD_DATA[RequestedDate] >= mindate && G_MARS_SALES_DASHBOARD_DATA[RequestedDate] <= maxdate)
+			
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: 9d975f6d-a9b0-494d-8d4a-bbf09a46532e
+
+	measure 'Max Fiscal Next Month Date' = ```
+			
+			var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			var convertyear = IFERROR(CONVERT([This Year], INTEGER), BLANK())
+			var thismonth = IF(convertmonth = 12, 1, convertmonth + 1)
+			var thisyear = IF(convertmonth = 12, convertyear + 1 , convertyear)
+			
+			RETURN
+			CALCULATE(max(G_DIMCALENDAR[Date]),G_DIMCALENDAR[FiscalMonth] = thismonth,G_DIMCALENDAR[FiscalYear] = thisyear)
+			
+			
+			
+			```
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: fcd76bf1-7ff4-42f1-9e39-2cb5676db0a9
+
+	measure 'Min Fiscal Next Month Date' =
+			
+			var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			var convertyear = IFERROR(CONVERT([This Year], INTEGER), BLANK())
+			var thismonth = IF(convertmonth = 12, 1, convertmonth + 1)
+			var thisyear = IF(convertmonth = 12, convertyear + 1 , convertyear)
+			
+			RETURN
+			CALCULATE(min(G_DIMCALENDAR[Date]),G_DIMCALENDAR[FiscalMonth] = thismonth,G_DIMCALENDAR[FiscalYear] = thisyear)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: e33f585d-0136-4c4b-9c8b-b8ca528c5359
+
+	measure 'Max Fiscal Past Next Month Date' = ```
+			
+			var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			var convertyear = IFERROR(CONVERT([This Year], INTEGER), BLANK())
+			var thismonth = IF(convertmonth = 12, 2, 
+			                    if(convertmonth = 11,1, convertmonth + 2))
+			var thisyear = IF(convertmonth = 12 || convertmonth = 11, convertyear + 1 , convertyear)
+			
+			RETURN
+			CALCULATE(max(G_DIMCALENDAR[Date]),G_DIMCALENDAR[FiscalMonth] = thismonth,G_DIMCALENDAR[FiscalYear] = thisyear)
+			
+			
+			
+			```
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 6ab0fae8-b72d-47d6-965c-451d9851e0d5
+
+	measure 'Min Fiscal Past Next Month Date' = ```
+			
+			var convertmonth = IFERROR(CONVERT([This Month], INTEGER), BLANK())
+			var convertyear = IFERROR(CONVERT([This Year], INTEGER), BLANK())
+			var thismonth = IF(convertmonth = 12, 2, 
+			                    if(convertmonth = 11,1, convertmonth + 2))
+			var thisyear = IF(convertmonth = 12 || convertmonth = 11, convertyear + 1 , convertyear)
+			
+			RETURN
+			CALCULATE(min(G_DIMCALENDAR[Date]),G_DIMCALENDAR[FiscalMonth] = thismonth,G_DIMCALENDAR[FiscalYear] = thisyear)
+			
+			
+			
+			```
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 08a5316d-7abf-43c8-8069-42d74dd8231b
+
+	measure MaxWeekOffSet0 = CALCULATE(max(G_DIMCALENDAR[Date]),G_DIMCALENDAR[WeekOffset] =  0)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: eebaf370-3961-4c87-9fdf-185c4b70152a
+
+	measure MaxWeekOffSet1 = CALCULATE(max(G_DIMCALENDAR[Date]),G_DIMCALENDAR[WeekOffset] =  1)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: abab3e99-31e5-498e-8097-7ebfc0f3a57d
+
+	measure MinWeekOffSet0 = CALCULATE(min(G_DIMCALENDAR[Date]),G_DIMCALENDAR[WeekOffset] =  0)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: e4e5d4be-9f36-4d53-96fc-ea746505b5c8
+
+	measure MinWeekOffSet1 = CALCULATE(min(G_DIMCALENDAR[Date]),G_DIMCALENDAR[WeekOffset] =  1)
+		formatString: Short Date
+		displayFolder: 01_Measures
+		lineageTag: 63d305bb-6594-4b14-9847-4bde19120354
+
+	measure SecondLatestInvoiceDate = ```
+			
+			    MINX(
+			        TOPN(2, VALUES(G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]), G_MARS_SALES_DASHBOARD_DATA[InvoiceDate], DESC),
+			        G_MARS_SALES_DASHBOARD_DATA[InvoiceDate]
+			    )
+			
+			```
+		formatString: General Date
+		displayFolder: 01_Measures
+		lineageTag: 5e8faeaa-ee42-4c94-ab40-9362e58f9d1d
+
+	measure SecondLatestOrderDate = ```
+			
+			    MINX(
+			        TOPN(2, VALUES(G_MARS_SALES_DASHBOARD_DATA[OrderDate]), G_MARS_SALES_DASHBOARD_DATA[OrderDate], DESC),
+			        G_MARS_SALES_DASHBOARD_DATA[OrderDate]
+			    )
+			
+			```
+		formatString: General Date
+		displayFolder: 01_Measures
+		lineageTag: 14c88e55-09ac-47f6-970a-10fc1b2ef053
+
+	measure 'Daily Sales Rate Metric' = ```
+			
+			var maxinvoicedate = [Max Invoice Date]
+			RETURN
+			CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] = maxinvoicedate)
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 865d7481-13f0-4f40-a82a-6c32c2f8ae82
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Daily Sales Rate with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Daily Sales Rate Metric] - [Daily Sales Rate Second To Last]), [Daily Sales Rate Second To Last])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Daily Sales Rate Metric] = 0 || [Daily Sales Rate Second To Last]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," DoD"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 910748e7-52de-46ad-abdf-3cb085716901
+
+	measure 'Prior Day Entered with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Prior Day Entered] - [Prior Day Second To Last Entered]), [Prior Day Second To Last Entered])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Prior Day Entered] = 0 || [Prior Day Second To Last Entered]= 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," DoD"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 4828e853-0dd6-4473-9ee6-c4a8e91f5c9c
+
+	measure 'Prior Day Second To Last Entered' =
+			
+			
+			var orderdate = [SecondLatestOrderDate]
+			
+			return
+			CALCULATE(DISTINCTCOUNT(G_MARS_SALES_DASHBOARD_DATA[OrderNumber]),G_MARS_SALES_DASHBOARD_DATA[OrderDate] = orderdate)
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: d5126b8d-84d0-4c78-942a-bd739b02d51f
+
+	measure 'Prior Day Entered Conditional Format' = DIVIDE(CALCULATE([Prior Day Entered] - [Prior Day Second To Last Entered]), [Prior Day Second To Last Entered])
+		displayFolder: 01_Measures
+		lineageTag: 1bfbd2e3-7db3-4bd6-a992-5cddbcd20a26
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Daily Sales Rate Second To Last' =
+			
+			var maxinvoicedate = [SecondLatestInvoiceDate]
+			RETURN
+			CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),G_MARS_SALES_DASHBOARD_DATA[InvoiceDate] = maxinvoicedate)
+		displayFolder: 01_Measures
+		lineageTag: da1fe24e-7f58-4dc9-bcb5-5af1fd594fcf
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Daily Sales Rate Conditional Format' = DIVIDE(CALCULATE([Daily Sales Rate Metric] - [Daily Sales Rate Second To Last]), [Daily Sales Rate Second To Last])
+		displayFolder: 01_Measures
+		lineageTag: 4c5b9c2f-5dcf-4c1e-9afe-4be1ebfdbc35
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Amount on Hand Visual' = ```
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE('DynamicMonthAxis RequestDate'[MonthNum])
+			var monthvalue = [This Month]
+			var monthnum = SELECTEDVALUE('DynamicMonthAxis RequestDate'[MonthNum])
+			var todayyear = [This Year]
+			VAR currentMonthNum = SELECTEDVALUE('DynamicMonthAxis RequestDate'[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear,todayyear-1),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Amount on Hand],
+			            FILTER(
+			                G_DIMCALENDAR_REQUESTEDDATE,
+			                MONTH(G_DIMCALENDAR_REQUESTEDDATE[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR_REQUESTEDDATE[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Amount on Hand],
+			        FILTER(
+			           G_DIMCALENDAR_REQUESTEDDATE,
+			            G_DIMCALENDAR_REQUESTEDDATE[FiscalYear] = convertyear &&
+			            G_DIMCALENDAR_REQUESTEDDATE[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		displayFolder: 01_Measures
+		lineageTag: 158b5e5a-aafb-4180-95e5-4ed7cb9d84bf
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Amount On Backorder Visual' = ```
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE('DynamicMonthAxis RequestDate'[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE('DynamicMonthAxis RequestDate'[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE('DynamicMonthAxis RequestDate'[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear,todayyear-1),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Amount On Backorder Visual Metric],
+			            FILTER(
+			                G_DIMCALENDAR_REQUESTEDDATE,
+			                MONTH(G_DIMCALENDAR_REQUESTEDDATE[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR_REQUESTEDDATE[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Amount On Backorder Visual Metric],
+			        FILTER(
+			           G_DIMCALENDAR_REQUESTEDDATE,
+			            G_DIMCALENDAR_REQUESTEDDATE[FiscalYear] = convertyear &&
+			            G_DIMCALENDAR_REQUESTEDDATE[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		displayFolder: 01_Measures
+		lineageTag: 10ed2074-b70f-4cc8-bf0f-02d4ae5d91f4
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Open Orders Amount Card' =
+			
+			var formula = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[OpenOrderedAmount]),G_MARS_SALES_DASHBOARD_DATA[IsComplete] = 0)
+			RETURN
+			FORMAT(formula/1000, "$#,##0.0K")
+		displayFolder: 01_Measures
+		lineageTag: a66e369c-9a84-4187-9158-30a439a07efd
+
+	measure 'PY YTD Text' = "PY/PYTD"
+		displayFolder: 01_Measures
+		lineageTag: 1bf1536b-5fab-4b52-93bc-435f969ab6a5
+
+	measure 'Sales Previous YTD Card' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var currentyear = IFERROR(CONVERT([This Year], STRING), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var ttm = CALCULATE(SUM(G_MARS_SALES_DASHBOARD_DATA[SalesAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[TTM Beginning Date],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			                                            
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K PYTTM" ),
+			        if(thisyear = 0,0,
+			            If([Selected Year] = currentyear,FORMAT(thisyear/1000, "$#,##0.0K PYTD"),FORMAT(thisyear/1000, "$#,##0.0K PY")))))
+			```
+		displayFolder: 01_Measures
+		lineageTag: a53b7eb1-05a5-433f-aaa4-b0e68ecc89b4
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Target - Order To Invoice' = 7
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 8cf95b5a-5e4a-4647-8dac-75fe2c22f348
+
+	measure 'Target - Pick To Shipped' = 7
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 4d6615dd-9b46-482d-b808-9e7876b008bd
+
+	measure 'Target - Request To Invoice' = 4
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 7cf3383b-0700-4ec7-91a5-7d7382abdec7
+
+	measure 'Target - $ Per Sq Ft' = 75
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: 5a45abeb-fd5e-46c7-81a2-3f13bb86a6ca
+
+	measure 'Target - $ Per Emp' = 6500
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: 579ef726-4c6b-42ca-afb3-5542156105e5
+
+	measure 'Target - Fill Rate' = .90
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 4e1a0402-ab87-459f-8b3f-6b3c600c72f5
+
+	measure 'Target - OTIF' = .75
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 01_Measures
+		lineageTag: 6a903166-452b-4d5f-8e7a-72001a5d989a
+
+	column RSMNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: b9e37b2a-c71b-4ee8-8bff-ea1aa9592406
+		summarizeBy: sum
+		sourceColumn: RSMNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column RSMName
+		dataType: string
+		lineageTag: 21e9ed01-1ad8-4261-8f91-ee421d66c5a1
+		summarizeBy: none
+		sourceColumn: RSMName
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesAgentNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 74b4bd2e-a73b-4bc4-bc1e-b1ae8734fc40
+		summarizeBy: sum
+		sourceColumn: SalesAgentNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesAgentName
+		dataType: string
+		lineageTag: 66b8abc8-fd5d-4093-8abd-4d52e917a9f3
+		summarizeBy: none
+		sourceColumn: SalesAgentName
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesLeaderNumber
+		dataType: string
+		lineageTag: dd663a4c-9fc0-4fc1-b1c4-a61c381e49fb
+		summarizeBy: none
+		sourceColumn: SalesLeaderNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalYear
+		dataType: string
+		lineageTag: 87c9e558-bdff-40fc-82ea-6db3845aa123
+		summarizeBy: none
+		sourceColumn: FiscalYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalQuarterNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: e0f7cafe-4d07-466e-93e4-1c714211eac6
+		summarizeBy: sum
+		sourceColumn: FiscalQuarterNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalMonthNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 1ed052eb-98cf-4371-a506-387b142bf10c
+		summarizeBy: sum
+		sourceColumn: FiscalMonthNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column InvoiceDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 59f0f9e6-f73d-4d38-a9f9-72225ea9f5e5
+		summarizeBy: none
+		sourceColumn: InvoiceDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column SoldToCustomerNumber
+		dataType: string
+		lineageTag: d9bda3cc-83be-4c80-8f93-dccd92f8527f
+		summarizeBy: none
+		sourceColumn: SoldToCustomerNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column SoldToCustomerName
+		dataType: string
+		lineageTag: d3f880e0-f23c-4f7e-a185-9d0dbecd5538
+		summarizeBy: none
+		sourceColumn: SoldToCustomerName
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesAmount
+		dataType: double
+		lineageTag: 1764229a-abd1-4249-a8d7-98ad435e9ff9
+		summarizeBy: sum
+		sourceColumn: SalesAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OrderedAmount
+		dataType: double
+		lineageTag: ae1cdefc-2444-48be-b147-cdd180efbe49
+		summarizeBy: sum
+		sourceColumn: OrderedAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column BackOrderedAmount
+		dataType: double
+		lineageTag: 59c985c7-62b6-4ac4-9b11-14ead75f4832
+		summarizeBy: sum
+		sourceColumn: BackOrderedAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OpenOrderedAmount
+		dataType: double
+		lineageTag: 3b1d2510-b733-40b6-8e49-0b3fa40325e2
+		summarizeBy: sum
+		sourceColumn: OpenOrderedAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OrderCompanyNumber
+		dataType: string
+		lineageTag: 0a5e5ee2-ac31-4fb8-8bb4-5214e73d2e58
+		summarizeBy: none
+		sourceColumn: OrderCompanyNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 9cff6b31-6e7e-43fd-9749-b1a3502a04fe
+		summarizeBy: sum
+		sourceColumn: OrderNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderType
+		dataType: string
+		lineageTag: bbb66cb8-684f-47c3-b879-181a67df36f1
+		summarizeBy: none
+		sourceColumn: OrderType
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 143a47c0-399d-4fe1-ae89-ae643859b030
+		summarizeBy: none
+		sourceColumn: OrderDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column RequestedDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 2092df76-638c-4eb4-9a4d-78ee905ffd2f
+		summarizeBy: none
+		sourceColumn: RequestedDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column CustomerPO
+		dataType: string
+		lineageTag: e50084f5-fbc4-49b1-9fe6-52004872f88d
+		summarizeBy: none
+		sourceColumn: CustomerPO
+
+		annotation SummarizationSetBy = Automatic
+
+	column PaymentTerms
+		dataType: string
+		lineageTag: 4c780e02-74f2-4114-9880-b8d2dd6a9418
+		summarizeBy: none
+		sourceColumn: PaymentTerms
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderedQuantity
+		dataType: int64
+		formatString: 0
+		lineageTag: bc6eaba8-85fe-4af9-ba26-4ec2f1659e1c
+		summarizeBy: sum
+		sourceColumn: OrderedQuantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column BackOrderedQuantity
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b10b414-7f45-4bca-bcfc-f8a3a2747c9b
+		summarizeBy: sum
+		sourceColumn: BackOrderedQuantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesQuantity
+		dataType: int64
+		formatString: 0
+		lineageTag: fba101c8-3fb6-4059-9783-0ed125831ca0
+		summarizeBy: sum
+		sourceColumn: SalesQuantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column ItemNumber
+		dataType: string
+		lineageTag: 8ae742c1-f0ed-4284-a8b3-df5120bce386
+		summarizeBy: none
+		sourceColumn: ItemNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column ItemDescription
+		dataType: string
+		lineageTag: cf8c167a-29fb-40c4-a021-d2ac9c39b125
+		summarizeBy: none
+		sourceColumn: ItemDescription
+
+		annotation SummarizationSetBy = Automatic
+
+	column LineType
+		dataType: string
+		lineageTag: 6e39a709-f32f-426a-b15a-f1996edc1dfb
+		summarizeBy: none
+		sourceColumn: LineType
+
+		annotation SummarizationSetBy = Automatic
+
+	column CostOfSalesAmount
+		dataType: double
+		lineageTag: e7235290-9f8e-48a0-8ff0-fd2a2f3b2da7
+		summarizeBy: sum
+		sourceColumn: CostOfSalesAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CostOfOrderedAmount
+		dataType: double
+		lineageTag: 8ac1880c-a582-47be-838d-fdf27b0bb3dd
+		summarizeBy: sum
+		sourceColumn: CostOfOrderedAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CostOfBackOrderedAmount
+		dataType: double
+		lineageTag: 8c7ec2c2-540b-4c2f-ad45-3c64c9118c14
+		summarizeBy: sum
+		sourceColumn: CostOfBackOrderedAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column BranchNumber
+		dataType: string
+		lineageTag: 68a78afd-7182-40ac-8258-219bb4930b0f
+		summarizeBy: none
+		sourceColumn: BranchNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShipToCustomerNumber
+		dataType: string
+		lineageTag: 2f53783e-732c-47c9-8747-1301af420f38
+		summarizeBy: none
+		sourceColumn: ShipToCustomerNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShipToCustomerName
+		dataType: string
+		lineageTag: 7a390b46-e26c-4971-b6d6-c0a431d31721
+		summarizeBy: none
+		sourceColumn: ShipToCustomerName
+
+		annotation SummarizationSetBy = Automatic
+
+	column DocumentNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 619ec0c5-1f59-44dd-b9a2-09cc20472d61
+		summarizeBy: sum
+		sourceColumn: DocumentNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column DocumentType
+		dataType: string
+		lineageTag: 7e794bad-e754-4daf-887f-d524527b27b2
+		summarizeBy: none
+		sourceColumn: DocumentType
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductGroupNumber
+		dataType: string
+		lineageTag: cc07e5f5-eea8-466d-9d31-0624df83f156
+		summarizeBy: none
+		sourceColumn: ProductGroupNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column ItemCategory
+		dataType: string
+		lineageTag: 6d1dc9e7-bf3f-4119-9070-f203ee0a0c7c
+		summarizeBy: none
+		sourceColumn: ItemCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsKeyItemCategory
+		dataType: string
+		lineageTag: 89ab5d37-578c-4ca9-aab9-e674c3b68d8b
+		summarizeBy: none
+		sourceColumn: IsKeyItemCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column LineOfBusinessName
+		dataType: string
+		lineageTag: e268521f-5747-4685-bf92-a7dc6daa6b3a
+		summarizeBy: none
+		sourceColumn: LineOfBusinessName
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductAnalyticsItemGroupName
+		dataType: string
+		lineageTag: aca9d870-e7ca-41c1-a3d4-c40879940451
+		summarizeBy: none
+		sourceColumn: ProductAnalyticsItemGroupName
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductTypeName
+		dataType: string
+		lineageTag: 346044d1-c47c-42bc-ae79-5c7838071c20
+		summarizeBy: none
+		sourceColumn: ProductTypeName
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProductFamilyName
+		dataType: string
+		lineageTag: a068ed6b-0fbe-489c-b228-15d97cd6d32b
+		summarizeBy: none
+		sourceColumn: ProductFamilyName
+
+		annotation SummarizationSetBy = Automatic
+
+	column GLClass
+		dataType: string
+		lineageTag: 85c9e038-8eb9-40c0-9ddd-cdb757a6b2f9
+		summarizeBy: none
+		sourceColumn: GLClass
+
+		annotation SummarizationSetBy = Automatic
+
+	column BrandAbbreviation
+		dataType: string
+		lineageTag: eb5603c8-7b97-4ea2-8386-d377d78c87f7
+		summarizeBy: none
+		sourceColumn: BrandAbbreviation
+
+		annotation SummarizationSetBy = Automatic
+
+	column BuyingGroupAbbreviation
+		dataType: string
+		lineageTag: 14b9f797-1464-43c6-aa58-e05361106115
+		summarizeBy: none
+		sourceColumn: BuyingGroupAbbreviation
+
+		annotation SummarizationSetBy = Automatic
+
+	column OnHandOrderedQuantity
+		dataType: int64
+		formatString: 0
+		lineageTag: 08d49908-7732-440e-87cb-e3d869c76e40
+		summarizeBy: sum
+		sourceColumn: OnHandOrderedQuantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column PromisedDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 0195042a-5251-4b8d-ab62-2dd0fc01d09c
+		summarizeBy: none
+		sourceColumn: PromisedDate
+
+		variation Variation
+			isDefault
+			relationship: a3ea5e59-471f-4108-af78-1f22f14ea0f6
+			defaultHierarchy: LocalDateTable_1edc126d-cc2e-49b7-bf82-0c6074974331.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column OnHoldOrderedAmount
+		dataType: double
+		lineageTag: fe961ef6-8d82-4da2-bd89-13c913dd6b73
+		summarizeBy: sum
+		sourceColumn: OnHoldOrderedAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OnHandOrderedAmount
+		dataType: double
+		lineageTag: 6f27e986-4a9c-4510-bbdb-ea8f956e69c2
+		summarizeBy: sum
+		sourceColumn: OnHandOrderedAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column OrderStatusCode
+		dataType: string
+		lineageTag: 9cc83a27-8c2a-4377-a0a2-be8d7c43f92b
+		summarizeBy: none
+		sourceColumn: OrderStatusCode
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsComplete
+		dataType: int64
+		formatString: 0
+		lineageTag: 84a510ad-5815-4f3b-a216-becae4f3c170
+		summarizeBy: sum
+		sourceColumn: IsComplete
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsOnTime
+		dataType: int64
+		formatString: 0
+		lineageTag: 1e7455c3-0d80-4fae-b8b3-a82dfa2e0450
+		summarizeBy: sum
+		sourceColumn: IsOnTime
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsNPI
+		dataType: int64
+		formatString: 0
+		lineageTag: 770c01c5-d22f-48b5-9610-fc9675ca40eb
+		summarizeBy: sum
+		sourceColumn: IsNPI
+
+		annotation SummarizationSetBy = Automatic
+
+	column PickedDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 4f94d0f0-edf0-431a-a2cd-f26b89daac90
+		summarizeBy: none
+		sourceColumn: PickedDate
+
+		variation Variation
+			isDefault
+			relationship: 1d1d56c5-8c81-4954-bb81-1f5732e3d631
+			defaultHierarchy: LocalDateTable_ed20fd1e-8971-4725-86e2-30e76c751425.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column PickTicketNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 0adc9fec-c487-48a6-bf1c-8be34429078b
+		summarizeBy: sum
+		sourceColumn: PickTicketNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column OnHoldStatus
+		dataType: string
+		lineageTag: b617630a-1b60-4f28-b909-3aa3f4943ba9
+		summarizeBy: none
+		sourceColumn: OnHoldStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column PendingPriceApprovalStatus
+		dataType: string
+		lineageTag: 491cebcd-956d-41a0-830b-8e96099eedd7
+		summarizeBy: none
+		sourceColumn: PendingPriceApprovalStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column OnHoldOrderedQuantity
+		dataType: int64
+		formatString: 0
+		lineageTag: e38c830f-5666-4807-a198-afb491ccb1c5
+		summarizeBy: sum
+		sourceColumn: OnHoldOrderedQuantity
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderCompany
+		dataType: string
+		lineageTag: cf36149b-a350-45a7-9bb6-0f2f615a78ea
+		summarizeBy: none
+		sourceColumn: OrderCompany
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderStatus
+		dataType: string
+		lineageTag: 21287adb-ba62-4525-803e-c4e4d09251e6
+		summarizeBy: none
+		sourceColumn: OrderStatus
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShipmentNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: e9379362-79f0-4317-8a9f-848172118daa
+		summarizeBy: sum
+		sourceColumn: ShipmentNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsOnTimeInFull
+		dataType: int64
+		formatString: 0
+		lineageTag: 319ef20e-01f9-41cd-b84e-794db9f2fb3f
+		summarizeBy: sum
+		sourceColumn: IsOnTimeInFull
+
+		annotation SummarizationSetBy = Automatic
+
+	column ShippedDate
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 4fe187a3-93a4-47ab-bbfb-cca2e391ff1a
+		summarizeBy: none
+		sourceColumn: ShippedDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'New Products' = SWITCH(G_MARS_SALES_DASHBOARD_DATA[IsNPI],0,"Non-New Products",1,"New Products")
+		lineageTag: 1f2a0a25-7432-4fa4-9507-577fee91afd5
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column OrderCompanyGroup
+		dataType: string
+		lineageTag: df8c7853-dfb3-4876-bf32-b457dd7c003a
+		summarizeBy: none
+		sourceColumn: OrderCompanyGroup
+
+		annotation SummarizationSetBy = Automatic
+
+	partition G_MARS_SALES_DASHBOARD_DATA = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("devmarssyn-ondemand.sql.azuresynapse.net", "mars_ldw"),
+				    gold_G_MARS_SALES_DASHBOARD_DATA = Source{[Schema="gold",Item="G_MARS_SALES_DASHBOARD_DATA"]}[Data]
+				in
+				    gold_G_MARS_SALES_DASHBOARD_DATA
+
+	annotation PBI_ResultType = Exception
+

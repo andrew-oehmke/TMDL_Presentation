@@ -1,0 +1,5 @@
+role RLS_LIMITED
+	modelPermission: read
+
+	annotation PBI_Id = b62c2612f6fc425ab30a34231d7eb109
+

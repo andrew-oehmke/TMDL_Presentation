@@ -1,0 +1,100 @@
+relationship d470a5ff-f9a3-40ba-b92e-9a6249124815
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR.WeekStartDate
+	toColumn: LocalDateTable_a69408b7-8c8a-4d28-b1e3-92c8dfb3a5aa.Date
+
+relationship b0bbde1d-302f-4ae9-94f9-4a6cbe91f8e0
+	joinOnDateBehavior: datePartOnly
+	fromColumn: EmployeeSqFt.Date
+	toColumn: LocalDateTable_6e8f3c16-daaa-41aa-8781-f92c7b69be01.Date
+
+relationship 42347ce2-cf18-4d8e-9193-022a58993e72
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR.AlignedWeekStartDate
+	toColumn: LocalDateTable_b9a37572-5954-40da-8df3-4e03ddf5c584.Date
+
+relationship c7ab828d-8501-4f3b-8ed8-e25f77807876
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR.Date
+	toColumn: LocalDateTable_65c1ce5c-3e7e-4efe-a486-6d60672ce671.Date
+
+relationship 8a4c8545-9b23-08f0-f632-5fb583f11007
+	toCardinality: many
+	fromColumn: G_MARS_SALES_DASHBOARD_DATA.InvoiceDate
+	toColumn: G_DIMCALENDAR.Date
+
+relationship 1d1d56c5-8c81-4954-bb81-1f5732e3d631
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_MARS_SALES_DASHBOARD_DATA.PickedDate
+	toColumn: LocalDateTable_ed20fd1e-8971-4725-86e2-30e76c751425.Date
+
+relationship 9a8f40dd-d080-4a7e-a44d-c4ea07f9fb74
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_REQUESTEDDATE.Date
+	toColumn: LocalDateTable_30e54908-606a-4f7e-8560-bf6f470c0e57.Date
+
+relationship a3ea5e59-471f-4108-af78-1f22f14ea0f6
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_MARS_SALES_DASHBOARD_DATA.PromisedDate
+	toColumn: LocalDateTable_1edc126d-cc2e-49b7-bf82-0c6074974331.Date
+
+relationship d8edf55f-ddea-a09d-2f07-e87ab9622197
+	toCardinality: many
+	fromColumn: G_MARS_SALES_DASHBOARD_DATA.RequestedDate
+	toColumn: G_DIMCALENDAR_REQUESTEDDATE.Date
+
+relationship c5cb54a7-d7f1-4d8d-a30b-d7a28bac8537
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_ORDERDATE.Date
+	toColumn: LocalDateTable_42e7efc5-f960-4ebe-9a82-0af6cb0c54f2.Date
+
+relationship e3bfc259-fcb6-4bb9-a42a-5f856b1c4644
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_SHIPPEDDATE.Date
+	toColumn: LocalDateTable_f360742d-31a9-4c38-8508-7364cea23328.Date
+
+relationship 3482f1c8-94ba-eb87-91f2-a1e88b10e87e
+	toCardinality: many
+	fromColumn: G_MARS_SALES_DASHBOARD_DATA.OrderDate
+	toColumn: G_DIMCALENDAR_ORDERDATE.Date
+
+relationship f75565ca-6ff0-b1d4-a03f-346de3dfa061
+	toCardinality: many
+	fromColumn: G_MARS_SALES_DASHBOARD_DATA.ShippedDate
+	toColumn: G_DIMCALENDAR_SHIPPEDDATE.Date
+
+relationship 8a2cf30b-846c-4371-b1bc-6e7db521d343
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_ORDERDATE.WeekStartDate
+	toColumn: LocalDateTable_0cabc900-de14-4310-a1f2-02b4a74c559c.Date
+
+relationship 8e132389-b64d-4690-a085-86567f4c1b8d
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_SHIPPEDDATE.WeekStartDate
+	toColumn: LocalDateTable_0d92ec3b-3165-4fed-9f2e-965c8a053946.Date
+
+relationship 8da151b6-c20a-488c-86c9-a88d4d845cb4
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_REQUESTEDDATE.WeekStartDate
+	toColumn: LocalDateTable_080ab05f-d42d-4b87-8182-901a2b8a3105.Date
+
+relationship f7861379-99ed-416e-b37a-f1ae2a1f7257
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_REQUESTEDDATE.AlignedWeekStartDate
+	toColumn: LocalDateTable_771553ba-ea78-48a3-8008-946fbdd2c9f5.Date
+
+relationship 29c9d5fe-18bf-4a90-957f-adc03a4ebffd
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_ORDERDATE.AlignedWeekStartDate
+	toColumn: LocalDateTable_4c14e6eb-8ae3-4539-adaf-a899a4967747.Date
+
+relationship 08335b04-4002-4c82-824e-65a7c4734542
+	joinOnDateBehavior: datePartOnly
+	fromColumn: G_DIMCALENDAR_SHIPPEDDATE.AlignedWeekStartDate
+	toColumn: LocalDateTable_17a6f678-23cc-4d90-8ea0-bacd2c303d4d.Date
+
+relationship b1b090c7-8882-176b-3f78-7f7c2f4bcfd0
+	toCardinality: many
+	fromColumn: G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA.YearMonth
+	toColumn: G_DIMCALENDAR.YearMonth
+

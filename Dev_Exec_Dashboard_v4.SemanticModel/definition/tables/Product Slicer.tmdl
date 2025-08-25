@@ -1,0 +1,32 @@
+table 'Product Slicer'
+	lineageTag: ccd6e962-16ce-4a83-8e25-486a6eb5add5
+
+	measure IsProductSelected =
+			
+			IF (
+			    SELECTEDVALUE ( 'Product Slicer'[New Products] ) = "All Products",
+			    1,
+			    0
+			)
+		formatString: 0
+		lineageTag: fac328ec-c000-4b7d-b2a9-ef5d21e6e160
+
+	column 'New Products'
+		lineageTag: 6b8cd482-5588-4cb7-8ece-9c99e9237e9c
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [New Products]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Product Slicer' = calculated
+		mode: import
+		source =
+				
+				UNION (
+				    ROW ( "New Products", "All Products" ),
+				    DISTINCT ( G_MARS_SALES_DASHBOARD_DATA[IsNPI])
+				)
+
+	annotation PBI_Id = 2656f780038e47a0964c8296e4226476
+

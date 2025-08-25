@@ -1,0 +1,1022 @@
+table G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA
+	lineageTag: a459a65e-fd00-41fe-a879-e09e189ea325
+
+	measure 'Budget Sales MTD Card' =
+			
+			var thismonth = [This Month]
+			var thisyear = [This Year]
+			var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			var formula = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]),G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = thisyear)
+			var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]),G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = convertyear)
+			
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, "$0",
+			    if([Selected Year] = "TTM", FORMAT(ttm/1000, "$#,##0.0K"),
+			    if(formula = 0,"$0",FORMAT(formula/1000, "$#,##0.0K")))
+			)
+		displayFolder: 01_Measures
+		lineageTag: 43504f2e-1a24-4417-80b7-99f2711fb65b
+
+	measure 'Budget Sales This Year Card' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var lastyearmonth = [LastYearMonth]
+			    var thisyearmonth = [ThisYearMonth]
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]), G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear]= convertyear)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]),G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[YearMonth] >= lastyearmonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[YearMonth] <= thisyearmonth)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: 7df29cd1-c57b-496a-8944-e2302474f55c
+
+	measure 'Gross Margin MTD Card' = DIVIDE([Gross Profit MTD],G_MARS_SALES_DASHBOARD_DATA[Sales MTD])
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 78574911-8777-447b-b3b9-d260be17dd54
+
+	measure 'Gross Margin MTD with Arrow' = ```
+			
+			
+			var percentage = [Gross Margin MTD Card] - [Gross Margin PY MTD Calculation]
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Gross Margin MTD Card] = 0 || [Gross Margin PY MTD Card] = 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," YoY"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 4cbd50c5-890d-42b1-8586-6244b6399110
+
+	measure 'Gross Margin MTD Conditional Format' = [Gross Margin MTD Card] - [Gross Margin PY MTD Calculation]
+		displayFolder: 01_Measures
+		lineageTag: 933f9be6-dcf6-45b6-b5e4-13f7de305d3a
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Margin Previous YTD Visual' = ```
+			
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear-1,todayyear-2),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Gross Margin],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Gross Margin],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear - 1 &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01_Measures
+		lineageTag: 6f7e0223-5493-479c-8f87-8a76373f0f3a
+
+	measure 'Gross Margin PY MTD Card' = ```
+			
+			
+			var formula = DIVIDE([Gross Profit PY MTD],[Sales Previous MTD])
+			
+			RETURN
+			if([Selected Year] = "TTM" && formula= 0, 0,
+			    if([Selected Year] = "TTM", FORMAT(formula, "0% PYTTM"),
+			    if(formula = 0,0,FORMAT(formula, "0% PYMTD"))))
+			      
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 6273643f-d4b2-443c-a316-ab9148be50ba
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Margin Year YTD Visual' = ```
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear,todayyear-1),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Gross Margin],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Gross Margin],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01_Measures
+		lineageTag: 9d032c10-c08a-4131-9b5c-34a809b3f081
+
+	measure 'Gross Margin Previous YTD Table' = ```
+			
+			    DIVIDE([Gross Profit Previous YTD],[Sales Previous YTD])
+			
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 5027aab3-c430-409a-800f-e2a4d4ad3eeb
+
+	measure 'Gross Margin YTD Conditional Format' = [Gross Margin YTD Card & Table] - [Gross Margin Previous YTD Table]
+		displayFolder: 01_Measures
+		lineageTag: d2f561a1-686d-4a80-9709-7da7b5cc2b0b
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Margin YTD Card & Table' = ```
+			DIVIDE([Gross Profit YTD],[Sales YTD])
+			
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 036ef20f-5a20-4965-9c2c-57c3145fc02e
+
+	measure 'Gross Margin YTD with Arrow' = ```
+			
+			
+			var percentage = [Gross Margin YTD Card & Table] - [Gross Margin Previous YTD Table]
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Gross Margin YTD Card & Table] = 0 || [Gross Margin Previous YTD Table] = 0, "", arrow & " " & CONCATENATE(FORMAT(percentage,"0%")," YoY"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 76730305-7365-456f-aac6-e28bae07c745
+
+	measure 'Budget Sales MTD with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Sales MTD] - [Budget Sales MTD]), [Budget Sales MTD])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Budget Sales MTD] = 0 || [Sales MTD] = 0, "", arrow & " " & FORMAT(percentage,"0% vs Actual"))
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 927ea1a4-29af-4cd4-bd7b-621f40786f8d
+
+	measure 'Budget Sales MTD Conditional Format' = DIVIDE(CALCULATE([Sales MTD] - [Budget Sales MTD]), [Budget Sales MTD])
+		displayFolder: 01_Measures
+		lineageTag: 69f6b2ed-5b8a-4b5a-8cb3-b4d31b811fb7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Budget Sales YTD with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Sales YTD] - [Budget Sales This Year]), [Budget Sales This Year])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Budget Sales This Year] = 0 || [Sales YTD] = 0, "", arrow & " " & FORMAT(percentage,"0% vs Actual"))
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: e665b26f-3b39-4577-8a0d-146b657f03e0
+
+	measure 'Budget Sales YTD Conditional Format' = DIVIDE(CALCULATE([Sales YTD] - [Budget Sales This Year]), [Budget Sales This Year])
+		displayFolder: 01_Measures
+		lineageTag: c52be909-800e-43df-8a38-bbedb34ee345
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Budget Sales MTD' =
+			
+			var thismonth = [This Month]
+			var thisyear = [This Year]
+			var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			var formula = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]),G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = thisyear)
+			var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]),G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = convertyear)
+			
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM", ttm,
+			    if(formula = 0,0,formula))
+			)
+		displayFolder: 01_Measures
+		lineageTag: 738d1753-a56a-4043-b2dd-416245f38a60
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Budget Sales This Year' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var lastyearmonth = [LastYearMonth]
+			    var thisyearmonth = [ThisYearMonth]
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]), G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear]= convertyear)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]),G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[YearMonth] >= lastyearmonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[YearMonth] <= thisyearmonth)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: ec0ad9b4-9e7f-4f81-8a7d-63cd0f9e3869
+
+	measure 'Gross Margin' =
+			DIVIDE([Gross Profit YTD],[Sales YTD])
+			
+			// var sales = sum(G_MARS_SALES_DASHBOARD_DATA[SalesAmount])
+			// var margin = sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount])
+			
+			// RETURN
+			// DIVIDE(margin,sales)
+		displayFolder: 01_Measures
+		lineageTag: 91fe3e82-6ece-4ffd-a3e9-655a80218668
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Budget Margin MTD with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Budget Margin MTD] - [Gross Margin MTD Card]), [Budget Margin MTD])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Budget Margin MTD] = 0 || [Gross Margin MTD Card] = 0, "", arrow & " " & FORMAT(percentage,"0%"))
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: 927ea1a4-29af-4cd4-bd7b-621f40786f81
+
+	measure 'Budget Margin MTD Conditional Format' = DIVIDE(CALCULATE([Budget Margin MTD] - [Gross Margin MTD Card]), [Budget Margin MTD])
+		displayFolder: 01_Measures
+		lineageTag: 69f6b2ed-5b8a-4b5a-8cb3-b4d31b811fb1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Budget Margin YTD with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Budget Margin This Year] - [Gross Margin YTD Card & Table]), [Gross Margin YTD Card & Table])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Budget Margin This Year] = 0 || [Gross Margin YTD Card & Table] = 0, "", arrow & " " & FORMAT(percentage,"0%"))
+			
+			```
+		displayFolder: 01_Measures
+		lineageTag: e665b26f-3b39-4577-8a0d-146b657f03e1
+
+	measure 'Budget Margin YTD Conditional Format' = DIVIDE(CALCULATE([Budget Margin This Year] - [Gross Margin YTD Card & Table]), [Gross Margin YTD Card & Table])
+		displayFolder: 01_Measures
+		lineageTag: c52be909-800e-43df-8a38-bbedb34ee341
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Budget Margin MTD' =
+			
+			var thismonth = [This Month]
+			var thisyear = [This Year]
+			var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			var formula = CALCULATE(DIVIDE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginBudgetAmount]),SUM(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount])),
+			                G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = thisyear)
+			var ttm = CALCULATE(DIVIDE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginBudgetAmount]),SUM(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount])),
+			                G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = convertyear)
+			
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM", ttm,
+			    if(formula = 0,0,formula))
+			)
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 738d1753-a56a-4043-b2dd-416245f38a61
+
+	measure 'Budget Margin This Year' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var lastyearmonth = [LastYearMonth]
+			    var thisyearmonth = [ThisYearMonth]
+			    var thisyear = CALCULATE(DIVIDE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginBudgetAmount]),SUM(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount])),
+			                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear]= convertyear)
+			    var ttm = CALCULATE(DIVIDE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginBudgetAmount]),SUM(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount])),
+			               G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[YearMonth] >= lastyearmonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[YearMonth] <= thisyearmonth)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: ec0ad9b4-9e7f-4f81-8a7d-63cd0f9e3861
+
+	measure 'Gross Margin YTD with Arrow Table' = ```
+			
+			
+			var percentage = [Gross Margin YTD Card & Table] - [Gross Margin Previous YTD Table]
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Gross Margin YTD Card & Table] = 0 || [Gross Margin Previous YTD Table] = 0, "", arrow & " " & FORMAT(percentage,"0%"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 5adf6f54-5228-4679-98ea-b6f628cb3951
+
+	measure 'Sales YTD For Budget Performance' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			RETURN
+			   if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: 1ac90d3e-cd8b-4fa9-986f-a04578940c34
+
+	measure 'Budget Sales YTD For Budget Performance with Arrow' = ```
+			
+			
+			var percentage = DIVIDE(CALCULATE([Budget Sales This Year] - [Sales YTD For Budget Performance]), [Budget Sales This Year])
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Budget Sales This Year] = 0 || [Sales YTD] = 0, "", arrow & " " & FORMAT(percentage,"0%"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 0caba9ea-3f5c-4c20-a2b2-4683c88eb6a5
+
+	measure 'Budget Sales YTD For Budget Performance Conditional Format' = ```
+			
+			
+			 DIVIDE(CALCULATE([Budget Sales This Year] - [Sales YTD For Budget Performance]), [Budget Sales This Year])
+			```
+		displayFolder: 01_Measures
+		lineageTag: 5abb7da2-1b81-435f-936c-a3efd63a86c4
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Budget Tracker' = ```
+			
+			var thismonth = [This Month]
+			var thisyear = [This Year]
+			RETURN
+			CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount]),G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = thisyear)
+			
+			
+			```
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: 01_Measures
+		lineageTag: b16ad1bb-9daa-4495-925c-6217cc95ea7c
+
+	measure 'Budget This Year YTD Visual' = ```
+			
+			VAR selectedYear = SELECTEDVALUE(YearSelector[FiscalYear])
+			var convertyear = VALUE(selectedYear)
+			VAR fiscalMonth = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var monthvalue = MONTH(TODAY())
+			var monthnum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			var todayyear = YEAR(TODAY())
+			VAR currentMonthNum = SELECTEDVALUE(DynamicMonthAxis[MonthNum])
+			
+			VAR ttmMonth = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        fiscalMonth,
+			        currentMonthNum
+			    )
+			VAR ttmYear = 
+			    SWITCH(TRUE(),
+			        selectedYear = "TTM",
+			        IF(monthvalue >= monthnum, todayyear,todayyear-1),
+			        VALUE(selectedYear)
+			    )
+			
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    selectedYear = "TTM",
+			        CALCULATE(
+			            [Total Budget],
+			            FILTER(
+			                G_DIMCALENDAR,
+			                MONTH(G_DIMCALENDAR[Date]) = ttmMonth &&
+			                YEAR(G_DIMCALENDAR[Date]) = ttmYear
+			            )
+			        ),
+			    CALCULATE(
+			        [Total Budget],
+			        FILTER(
+			            G_DIMCALENDAR,
+			            G_DIMCALENDAR[FiscalYear] = convertyear &&
+			            G_DIMCALENDAR[FiscalMonth] = currentMonthNum
+			        )
+			    )
+			)
+			```
+		displayFolder: 01_Measures
+		lineageTag: ca45122f-7d28-47de-be77-23793ee97d8f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Profit Previous YTD' = ```
+			
+			
+			
+			    var ttmfirstmonth = [LastYearMonth]
+			    var ttmlastmonth = [TTM PY First Month]
+			    var thismonth = [This Month]
+			    var lastyear = [This Year] - 1
+			    // var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    // var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), 
+			                                TREATAS(
+			                                    SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                                G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] >= 1 && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] <= thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = lastyear
+			                               )
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),
+			                        TREATAS(
+			                                   SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                               G_DIMCALENDAR[YearMonth] >= ttmfirstmonth && G_DIMCALENDAR[YearMonth] <= ttmlastmonth)
+			                              
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		displayFolder: 01_Measures
+		lineageTag: e525ad36-da31-42ec-8278-cfc6187eac62
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Profit Previous YTD Table' = ```
+			
+			    // var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var ttmfirstmonth = [LastYearMonth]
+			    var ttmlastmonth = [TTM PY First Month]
+			    var thismonth = [This Month]
+			    var lastyear = [This Year] - 1
+			    // var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    // var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),DATESBETWEEN(G_DIMCALENDAR[Date],[Beginning of Last Year],[Today's Date Last Year]),REMOVEFILTERS('YearSelector'[FiscalYear]))
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), 
+			                                TREATAS(
+			                                   SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                                G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] >= 1 && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] <= thismonth && G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = lastyear
+			                               )
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),
+			                        TREATAS(
+			                                    SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                                G_DIMCALENDAR[YearMonth] >= ttmfirstmonth && G_DIMCALENDAR[YearMonth] <= ttmlastmonth)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			
+			```
+		formatString: \$#,0.0;(\$#,0.0);\$#,0.0
+		displayFolder: 01_Measures
+		lineageTag: b1e0bd45-7a74-477e-865f-116c5c6934d0
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Gross Profit YTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var ttmfirstmonth = [TTM YTD First Month]
+			    var currentyearmonth = [Current Year Month]
+			    // var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    // var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			     var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), 
+			                                 TREATAS(
+			                                    SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                        G_DIMCALENDAR[FiscalYear]>= convertyear)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),
+			                             TREATAS(
+			                                    SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                            G_DIMCALENDAR[YearMonth] >= ttmfirstmonth && G_DIMCALENDAR[YearMonth] <= currentyearmonth)
+			                            
+			
+			
+			                               
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		displayFolder: 01_Measures
+		lineageTag: ef835f2f-15d5-4511-964b-386290b7fde7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Profit YTD Conditional Format' = DIVIDE(CALCULATE([Gross Profit YTD] - [Gross Profit Previous YTD]),[Gross Profit Previous YTD])
+		displayFolder: 01_Measures
+		lineageTag: 911921ef-33b4-4020-9102-77e24b9d5ad1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Profit YTD Table' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    // var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    // var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), 
+			                        TREATAS(
+			                                    SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                            G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),
+			                        TREATAS(
+			                                    SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ),
+			                            G_DIMCALENDAR[FiscalYear] = convertyear)
+			
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",FORMAT(ttm/1000, "$#,##0.0K"),
+			        if(thisyear = 0,0,FORMAT(thisyear/1000, "$#,##0.0K"))))
+			```
+		displayFolder: 01_Measures
+		lineageTag: d31d7629-5710-4283-b9d8-aecbbc7639f8
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Profit YTD with Arrow' = ```
+			
+			
+			//var percentage = DIVIDE(CALCULATE([Gross Profit YTD] - [Gross Profit Previous YTD]),[Gross Profit Previous YTD])
+			
+			var percentage = CALCULATE(DIVIDE([Gross Profit YTD] - [Gross Profit Previous YTD],[Gross Profit Previous YTD]),
+			                                TREATAS(
+			                                   SELECTCOLUMNS(
+			                                        G_MARS_SALES_DASHBOARD_DATA,
+			                                        "CompanyGroup", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyGroup],
+			                                        "OrderCompany", G_MARS_SALES_DASHBOARD_DATA[OrderCompanyNumber],
+			                                        "ItemCategory", G_MARS_SALES_DASHBOARD_DATA[ItemCategory]
+			                                    ),
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyGroup],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[CompanyNumber],
+			                                    G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[ItemCategory]
+			                                ))
+			
+			                                
+			var round_percentage = ROUND(percentage,2)
+			var arrow = 
+			if(
+			    round_percentage > 0 , UNICHAR(9650),
+			    IF(round_percentage < 0 ,UNICHAR(9660),"")
+			    )
+			RETURN
+			if([Gross Profit YTD] = 0 || [Gross Profit Previous YTD] = 0, "", arrow & " " & FORMAT(percentage,"0%"))
+			```
+		displayFolder: 01_Measures
+		lineageTag: ac4dd729-d521-4064-ba63-dc38aeaa646a
+
+	measure 'test measure 2' = DIVIDE(CALCULATE([Gross Profit YTD] - [Gross Profit Previous YTD]),[Gross Profit Previous YTD])
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 7440650b-8ab0-449d-a6c0-62a83a2c8591
+
+	measure 'Gross Profit MTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thismonth = [This Month]
+			    var currentyear = [This Year]
+			    // var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    // var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = convertyear, G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = currentyear, G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth)
+			
+			
+			                               
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		displayFolder: 01_Measures
+		lineageTag: c89d9302-f856-424a-8f12-a0232303703f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Total Budget' = sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesBudgetAmount])
+		displayFolder: 01_Measures
+		lineageTag: 64a5c525-7593-4232-a95a-c6bd309fe7d7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure ThisYearMonth = LOOKUPVALUE(G_DIMCALENDAR[YearMonth],G_DIMCALENDAR[Date],TODAY())
+		formatString: 0
+		lineageTag: f695b3f4-152a-4a34-b7bb-8485ec5069cb
+
+	measure LastYearMonth =
+			
+			var LastYear = [This Year] - 1
+			var ThisMonth = [This Month]
+			var lastyearmonth = FORMAT(LastYear, "0000") & FORMAT(ThisMonth, "00")
+			
+			RETURN
+			CONVERT(lastyearmonth,INTEGER)
+		formatString: 0
+		displayFolder: 01_Measures
+		lineageTag: 7411ec30-b0a4-4d13-8645-af3c4585d9c7
+
+	measure 'Gross Profit Key Item YTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    // var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    // var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			     var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),G_DIMCALENDAR[FiscalYear] = convertyear)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			
+			
+			                               
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		displayFolder: 01_Measures
+		lineageTag: 96ca6135-6187-47bd-92d3-a9c734fd505c
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Margin Key Item YTD Card & Table' = ```
+			DIVIDE([Gross Profit Key Item YTD],[Sales YTD])
+			
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: 01_Measures
+		lineageTag: 1d79c6b7-98bf-4afe-bec7-62251a9f8416
+
+	measure 'Gross Margin PY MTD Calculation' = ```
+			DIVIDE([Gross Profit PY MTD],[Sales Previous MTD])
+			
+			```
+		lineageTag: 3051ab21-abf0-4b75-bbde-3c5fec0e93bf
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Margin Previous YTD Card' = ```
+			
+			
+			var formula = DIVIDE([Gross Profit Previous YTD],[Sales Previous YTD])
+			 var currentyear = IFERROR(CONVERT([This Year], STRING), BLANK())
+			
+			RETURN
+			if(formula = 0,0,
+			    if([Selected Year] = "TTM", FORMAT(formula, "0% PYTTM"),
+			        if([Selected Year] = currentyear, FORMAT(formula, "0% PYTD"),FORMAT(formula, "0% PY"))))
+			
+			
+			
+			```
+		lineageTag: c0c9dd04-f7fe-45f5-b0e6-66f888156f71
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Gross Profit PY MTD' = ```
+			
+			    var convertyear = IFERROR(CONVERT([Selected Year], INTEGER), BLANK())
+			    var thismonth = [This Month]
+			    var currentyear = [This Year]
+			    // var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_DIMCALENDAR[FiscalYear] = convertyear)
+			    // var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]),G_DIMCALENDAR[Date] >= TODAY() - 365)
+			    var thisyear = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = convertyear -1 , G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth)
+			    var ttm = CALCULATE(sum(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[SalesGrossMarginAmount]), G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear] = currentyear - 1, G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber] = thismonth)
+			
+			
+			                               
+			RETURN
+			if([Selected Year] = "TTM" && ttm = 0, 0,
+			    if([Selected Year] = "TTM",ttm,
+			        if(thisyear = 0,0,thisyear)))
+			```
+		lineageTag: 6a45fa99-2e29-4f85-8ee3-756c3f169483
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'TTM PY First Month' =
+			
+			var LastYear = [This Year] - 2
+			var ThisMonth = [This Month] + 1
+			var lastyearmonth = FORMAT(LastYear, "0000") & FORMAT(ThisMonth, "00")
+			
+			RETURN
+			CONVERT(lastyearmonth,INTEGER)
+		formatString: 0
+		lineageTag: be013757-76a0-4522-8d7f-7f75adc566cd
+
+	measure 'TTM YTD First Month' =
+			
+			var LastYear = [This Year] - 1
+			var ThisMonth = [This Month] + 1
+			var lastyearmonth = FORMAT(LastYear, "0000") & FORMAT(ThisMonth, "00")
+			
+			RETURN
+			CONVERT(lastyearmonth,INTEGER)
+		formatString: 0
+		lineageTag: 5bdfa8d3-312d-4976-9cfe-ca439e5ea4df
+
+	measure 'Current Year Month' =
+			
+			var ThisYear = [This Year]
+			var ThisMonth = [This Month]
+			var thisyearmonth = FORMAT(ThisYear, "0000") & FORMAT(ThisMonth, "00")
+			
+			RETURN
+			CONVERT(thisyearmonth,INTEGER)
+		formatString: 0
+		lineageTag: e5c989c8-124f-4d56-b67e-49595c7fc480
+
+	column FiscalYear
+		dataType: int64
+		formatString: 0
+		lineageTag: 4a6252c0-f082-43ef-9743-329c86887692
+		summarizeBy: sum
+		sourceColumn: FiscalYear
+
+		annotation SummarizationSetBy = Automatic
+
+	column FiscalMonthNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 7b617605-a55e-4147-9776-b4f918fc0a57
+		summarizeBy: sum
+		sourceColumn: FiscalMonthNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column CompanyNumber
+		dataType: string
+		lineageTag: aea2d960-f53d-4e2c-9508-833ab2a4006c
+		summarizeBy: none
+		sourceColumn: CompanyNumber
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesAmount
+		dataType: double
+		lineageTag: 0f645669-ca0e-4ff6-8e18-f64ff3690a4b
+		summarizeBy: sum
+		sourceColumn: SalesAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column SalesGrossMarginAmount
+		dataType: double
+		lineageTag: e4f7a50d-ca4a-41ee-b4b0-ebf836c25aca
+		summarizeBy: sum
+		sourceColumn: SalesGrossMarginAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column SalesBudgetAmount
+		dataType: double
+		lineageTag: fba2e4e3-d42a-42e2-9d91-6d27990a9759
+		summarizeBy: sum
+		sourceColumn: SalesBudgetAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column ItemCategory
+		dataType: string
+		lineageTag: dd9b3da9-1e3c-4d2e-8369-127ddfadb87b
+		summarizeBy: none
+		sourceColumn: ItemCategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column CostOfSalesBudgetAmount
+		dataType: double
+		lineageTag: 7013e6ce-c392-4139-bd38-5caeb14cd022
+		summarizeBy: sum
+		sourceColumn: CostOfSalesBudgetAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column SalesGrossMarginBudgetAmount
+		dataType: double
+		lineageTag: a467360a-4e70-410a-9549-679ee24383a1
+		summarizeBy: sum
+		sourceColumn: SalesGrossMarginBudgetAmount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column RLS_CONFIG = "FULL"
+		lineageTag: 6a4523bb-27b0-4664-9df4-a07afc999a09
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearMonth = FORMAT(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalYear], "0000") & FORMAT(G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA[FiscalMonthNumber], "00")
+		dataType: int64
+		formatString: 0
+		lineageTag: a1d3a2f3-b0ca-4d67-8bf8-eab988197a57
+		summarizeBy: none
+
+		changedProperty = DataType
+
+		annotation SummarizationSetBy = Automatic
+
+	column CompanyGroup
+		dataType: string
+		lineageTag: 4501bf81-3088-4181-88f5-94774e477be7
+		summarizeBy: none
+		sourceColumn: CompanyGroup
+
+		annotation SummarizationSetBy = Automatic
+
+	partition G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("devmarssyn-ondemand.sql.azuresynapse.net", "mars_ldw"),
+				    gold_G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA = Source{[Schema="gold",Item="G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA"]}[Data]
+				in
+				    gold_G_MARS_SALES_MARGIN_BUDGET_DASHBOARD_DATA
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Exception
+
